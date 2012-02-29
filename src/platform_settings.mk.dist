@@ -1,0 +1,8 @@
+# This file is used to set the host specific settings.  Before editing this file, COPY it to platform_settings.mk.  
+# Do not delete (or edit) the .dist verion, and do not add your .mk version to git. 
+# Set the IP address to connect to QGC
+IP_ADDRESS:=\"192.168.1.59\"
+CCFLAGS+= -DIP_ADDRESS=$(IP_ADDRESS)
+
+# Add directive to make alternate main function
+#CCFLAGS+= -DLOGFILE_TEST

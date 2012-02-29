@@ -1,0 +1,20 @@
+This is the source code for the ANCL Heliocpter autopilot.
+
+Directory structure:
+
+src/ - Source files
+extern/ - External library headers
+lib/ - Precompiled external libraries
+
+===========
+
+To import the source into QNX Momentics IDE:
+
+1. File->New->QNX C++ Project
+2. Project name = Autopilot
+3. Uncheck "Use default location"
+4. Set location to src directory
+5. Uncheck "Generate default file"
+6. Click Next
+7. Select appropriate Build Variant (e.g., x86 debug)
+8. Click Finish
