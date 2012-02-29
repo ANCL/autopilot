@@ -1,0 +1,9 @@
+<channels>
+	<threeSetpoint name="Aileron" number="1">1935, 1525, 1115</threeSetpoint>
+	<threeSetpoint name="Elevator" number="2">1233, 1516, 1795</threeSetpoint>
+	<fiveSetpoint name="Throttle" number="3">1860, 1772, 1678, 1512, 1236</fiveSetpoint>
+	<threeSetpoint name="Rudder" number="4">1739, 1521, 1304</threeSetpoint>
+	<twoSetpoint name="Gyro" number="5">1852, 1265</twoSetpoint>
+	<fiveSetpoint name="Pitch" number="6">2023, 1516, 1290, 1187, 1097</fiveSetpoint>
+</channels>
+
