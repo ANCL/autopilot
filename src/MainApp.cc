@@ -62,40 +62,13 @@ const MainApp& MainApp::operator=(const MainApp& other)
 }
 
 
-#if defined(MATRIX_MULTIPLY)
-#include "tests/matrixmultiply.cc"
-#elif defined(SERIAL_TEST)
-#include "tests/serial_test.cc"
-#elif defined(SCHEDULE_TEST)
-#include "tests/schedule.cc"
-#elif defined(NAVFILTER_TEST)
-#include "tests/navfilter_test.cc"
-#elif defined(LOGFILE_TEST)
+#if defined(LOGFILE_TEST)
 #include "tests/logfile_test.cc"
-#elif defined(TIMER_TEST)
-#include "tests/timer_test.cc"
-#elif defined(THREAD_TEST)
-#include "tests/Threading_test.cc"
-#elif defined(IMU_TEST)
-#include "tests/SerialPort.h"
-#include "tests/SerialPort.cc"
-#include "IMU_test.cc"
-#elif defined(MULTITHREADING_TEST)
-#include "tests/MultiThreading.cc"
-#elif defined(INT_TEST)
-#include "tests/integer_test.cc"
 #elif defined(QGCLINK_TEST)
 #include "tests/qgclink_test.cc"
-#elif defined(NORM_TEST)
-#include "tests/norm2pulse.cc"
-#elif defined(AHRS_TEST)
-#include "tests/ahrs_test.cc"
-#elif defined(GPS_TEST)
-#include "tests/gps_test.cc"
 #elif defined(GX3_TEST)
 #include "tests/gx3_test.cc"
 #else
-
 
 void MainApp::run()
 {
