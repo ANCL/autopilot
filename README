@@ -18,3 +18,12 @@ To import the source into QNX Momentics IDE:
 6. Click Next
 7. Select appropriate Build Variant (e.g., x86 debug)
 8. Click Finish
+
+============================
+
+Generate Documentation
+
+$ cd src
+$ doxygen
+
+the documentation will be placed in the doc directory.
