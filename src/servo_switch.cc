@@ -284,24 +284,24 @@ std::vector<uint8_t> servo_switch::send_serial::get_pulse_message()
 	message.push_back(raw_outputs.size()*2);
 
 	// put ch8 on pin1
-	message.push_back(static_cast<uint8_t>(raw_outputs[7]>>8));
-	message.push_back(static_cast<uint8_t>(raw_outputs[7] & 0xFF));
+//	message.push_back(static_cast<uint8_t>(raw_outputs[7]>>8));
+//	message.push_back(static_cast<uint8_t>(raw_outputs[7] & 0xFF));
 
 	for (uint_t i=0; i<raw_outputs.size(); i++)
 	{
-		if (i != 7)
-		{
-			if (i==2 || i==3)
-			{
-				message.push_back(static_cast<uint8_t>(raw_outputs[i-2]>>8));
-							message.push_back(static_cast<uint8_t>(raw_outputs[i-2] & 0xFF));
-			}
-			else
-			{
+//		if (i != 7)
+//		{
+//			if (i==2 || i==3)
+//			{
+//				message.push_back(static_cast<uint8_t>(raw_outputs[i-2]>>8));
+//							message.push_back(static_cast<uint8_t>(raw_outputs[i-2] & 0xFF));
+//			}
+//			else
+//			{
 			message.push_back(static_cast<uint8_t>(raw_outputs[i]>>8));
 			message.push_back(static_cast<uint8_t>(raw_outputs[i] & 0xFF));
-			}
-		}
+//			}
+//		}
 	}
 
 	std::vector<uint8_t> checksum = compute_checksum(20, raw_outputs.size()*2, std::vector<uint8_t>(message.begin()+4, message.end()));
