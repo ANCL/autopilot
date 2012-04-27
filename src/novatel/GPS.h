@@ -118,6 +118,26 @@ private:
 	/// threadsafe set gps_time
 	inline void set_gps_time(const gps_time& time) {boost::mutex::scoped_lock(_gps_time_lock); _gps_time = time;}
 
+	uint position_status;
+	boost::mutex position_status_lock;
+	inline void set_position_status(const uint status) {boost::mutex::scoped_lock(position_status_lock); position_status = status;}
+
+	uint position_type;
+	boost::mutex position_type_lock;
+	inline void set_position_type(const uint type) {boost::mutex::scoped_lock(position_type_lock); position_type = type;}
+
+	uint velocity_status;
+	boost::mutex velocity_status_lock;
+	inline void set_velocity_status(const uint status) {boost::mutex::scoped_lock(velocity_status_lock); velocity_status = status;}
+
+	uint velocity_type;
+	boost::mutex velocity_type_lock;
+	inline void set_velocity_type(const uint type) {boost::mutex::scoped_lock(velocity_type_lock); velocity_type = type;}
+
+	uint8_t num_sats;
+	boost::mutex num_sats_lock;
+	inline void set_num_sats(const uint8_t num) {boost::mutex::scoped_lock(num_sats_lock); num_sats = num;}
+
 	/// convert a raw string of bytes received from the novatel to an unsigned integer
 	template <typename ReturnType, typename IteratorType>
 	static ReturnType raw_to_uint(IteratorType first, IteratorType last);
@@ -139,6 +159,9 @@ private:
 
 	template <typename IteratorType>
 	static inline int16_t raw_to_int16(IteratorType first) {return raw_to_int<int16_t>(first, first + 2);}
+
+	template <typename FloatingType, typename IteratorType>
+	static FloatingType raw_to_float(IteratorType first, IteratorType last);
 
 	/// convert an integer type (signed or unsigned) to raw
 	template <typename IntegerType>
@@ -194,6 +217,22 @@ ReturnType GPS::raw_to_int(IteratorType first, IteratorType last)
 	default:
 		return data;
 	}
+}
+
+template <typename FloatingType, typename IteratorType>
+FloatingType GPS::raw_to_float(IteratorType first, IteratorType last)
+{
+	uint64_t result = 0;
+		for (IteratorType it = last - 1; it != first - 1; --it)
+		{
+			result <<= 8;
+			result += *it;
+		}
+		if (last - first == 8)
+			return *reinterpret_cast<double*>(&result);
+		else
+			return *reinterpret_cast<float*>(&result);
+
 }
 
 template <typename IntegerType>

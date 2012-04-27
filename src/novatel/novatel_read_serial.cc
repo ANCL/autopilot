@@ -24,9 +24,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+/* STL Headers */
+#include <bitset>
+
 /* C Headers */
 #include <termios.h>
 #include <math.h>
+#include <stdint.h>
 
 /* Boost Headers */
 #include <boost/assign.hpp>
@@ -104,16 +108,88 @@ void GPS::read_serial::initPort()
 
 void GPS::read_serial::readPort()
 {
-//	uint8_t comdata[MAXSERIALRECEIVESIZE];
-//
-//	std::vector<gps_output> ned_origin_measurements;
-//
+
+	std::vector<uint8_t> buffer;
+	buffer.reserve(300);
+
+	std::bitset<2> sync_bytes;
+
+	uint8_t sync_byte = 0;
+
 //	while(!GPS::getInstance()->check_terminate())
-//	{
-//		memset(&comdata, 0, MAXSERIALRECEIVESIZE);
-//		oem4_binary_header binhdr;
-//		int err_response = 0;
-//
+	while (true)
+	{
+
+		int bytes = readcond(fd_ser, &sync_byte, 1, 1, 10, 10);
+		if (bytes < 1);
+		else if (sync_byte == 0xAA)
+		{
+			// got first sync byte
+			sync_bytes.reset();
+			sync_bytes.set(0);
+		}
+		else if (sync_bytes[0] && sync_byte == 0x44)
+		{
+			sync_bytes.set(1);
+		}
+		else if (sync_bytes.count() == 2 && sync_byte == 0x12)
+		{
+			sync_bytes.reset();
+
+			int header_size = 25;
+			std::vector<uint8_t> header(header_size);
+			int bytes = readcond(fd_ser, &header[0], header_size, header_size, 10, 10);
+			if (bytes < header_size)
+			{
+				warning() << "Novatel: Received valid sync bytes, but could not read header";
+				continue;
+			}
+
+			int data_size = 112;
+			std::vector<uint8_t> log_data(data_size);
+			bytes = readcond(fd_ser, &log_data[0], data_size, data_size, 10, 10);
+			if (bytes < data_size)
+			{
+				warning() << "Novatel: Received header, but could not receive data log.";
+				continue;
+			}
+
+			int checksum_size = 4;
+			std::vector<uint8_t> checksum(checksum_size);
+			bytes = readcond(fd_ser, &checksum[0], checksum_size, checksum_size, 10, 10);
+			if (bytes < checksum_size)
+			{
+				warning() << "Novatel: received log data but could not receive checksum.";
+				continue;
+			}
+
+			std::vector<uint8_t> whole_message;
+			whole_message += 0xAA, 0x44, 0x12;
+			whole_message.insert(whole_message.end(), header.begin(), header.end());
+			whole_message.insert(whole_message.end(), log_data.begin(), log_data.end());
+
+			if (checksum != compute_checksum(whole_message))
+			{
+				warning() << "Novatel: received complete message but checksum was invalid";
+				continue;
+			}
+
+			// test to make sure it is rtkxyz
+			if (raw_to_uint16(header.begin() + 1) != 244)
+			{
+				debug() << "Received message from novatel which wasn't an RTKXYZ message.";
+				continue;
+			}
+
+			parse_header(header);
+//			parse_log(log_data);
+
+		}
+		else
+		{
+			sync_bytes.reset();
+		}
+
 //		int errorcode = receiveResponse(binhdr, comdata);
 //
 //		if(errorcode != OEM4OK)
@@ -244,7 +320,7 @@ void GPS::read_serial::readPort()
 //				GPS::getInstance()->set_ned_coords();
 //			}
 //		}
-//	}
+	}
 //
 //	debug() << "GPS received terminate, sending 'unlog' command";
 //
@@ -253,6 +329,29 @@ void GPS::read_serial::readPort()
 //
 //	sendUnlogCommand(binhd, unlog_data);
 }
+
+void GPS::read_serial::parse_header(const std::vector<uint8_t>& header)
+{
+	std::vector<uint8_t>::const_iterator it = header.begin() + 10;
+	uint32_t time_status = raw_to_uint32(it);
+	it += 4;
+	uint16_t week = raw_to_uint16(it);
+	it += 2;
+	uint32_t milliseconds = raw_to_uint32(it);
+	GPS::getInstance()->set_gps_time(gps_time(week, milliseconds, static_cast<gps_time::TIME_STATUS>(time_status)));
+}
+
+void GPS::read_serial::parse_log(const std::vector<uint8_t>& log)
+{
+
+}
+
+uint GPS::read_serial::parse_enum(const std::vector<uint8_t>& log, int offset)
+{
+	return raw_to_uint32(log.begin() + offset);
+}
+
+
 
 void GPS::read_serial::send_unlog_command()
 {
@@ -302,9 +401,6 @@ void GPS::read_serial::send_log_command()
 
 std::vector<uint8_t> GPS::read_serial::compute_checksum(const std::vector<uint8_t>& message)
 {
-	/* Deal with the binary header. */
-
-
 	unsigned long ulTemp1;
 	unsigned long ulTemp2;
 	unsigned long ulCRC = 0;

@@ -99,6 +99,9 @@ private:
 
 	static std::vector<uint8_t> compute_checksum(const std::vector<uint8_t>& message);
 
+	void parse_header(const std::vector<uint8_t>& header);
+	void parse_log(const std::vector<uint8_t>& log);
+
 	///Used by compute_checksum function
 	static unsigned long CRC32Value(int i);
 
@@ -108,8 +111,15 @@ private:
 	/// serial port file descriptor
 	int fd_ser;
 
+	uint parse_enum(const std::vector<uint8_t>& log, int offset = 0);
+	template<typename FloatingType>
+	blas::vector<FloatingType> parse_3floats(const std::vector<uint8_t>& log, int offset = 0);
 
 };
-
+template<typename FloatingType>
+blas::vector<FloatingType> GPS::read_serial::parse_3floats(const std::vector<uint8_t>& log, int offset)
+{
+	raw_to_float<double>(log.begin() + offset, log.begin() + offset + 8);
+}
 
 #endif

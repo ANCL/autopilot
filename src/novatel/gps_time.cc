@@ -24,13 +24,13 @@ gps_time::gps_time()
 {
 }
 
-gps_time::gps_time(uint16_t week, double seconds)
-:week(week), seconds(seconds)
+gps_time::gps_time(uint16_t week, double seconds, TIME_STATUS status)
+:week(week), seconds(seconds), status(status)
 {
 }
 
-gps_time::gps_time(uint16_t week, uint32_t milliseconds)
-:week(week)
+gps_time::gps_time(uint16_t week, uint32_t milliseconds, TIME_STATUS status)
+:week(week), status(status)
 {
 	seconds = (static_cast<double>(milliseconds))/1000;
 }
@@ -42,9 +42,37 @@ gps_time& gps_time::operator=(const gps_time& rhs)
 	return *this;
 }
 
+std::string gps_time::get_status_string() const
+{
+	switch(status)
+	{
+	case UNKNOWN:
+		return "Unknown";
+	case APPROXIMATE:
+		return "Approximate";
+	case COARSEADJUSTING:
+		return "Coarse Adjusting";
+	case COARSESTEERING:
+		return "Coarse Steering";
+	case COARSE:
+		return "Coarse";
+	case FREEWHEELING:
+		return "Freewheeling";
+	case FINEADJUSTING:
+		return "Fine Adjusting";
+	case FINE:
+		return "Fine";
+	case FINESTEERING:
+		return "Fine Steering";
+	case SATTIME:
+		return "Sat Time";
+	}
+	return std::string();
+}
+
 Debug& operator<<(Debug& dbg, const gps_time& gt)
 {
-	return dbg << "Time of week: " << gt.week << ", seconds: " << gt.seconds;
+	return dbg << "Time of week: " << gt.week << ", seconds: " << gt.seconds << " Status: " << gt.get_status_string();
 }
 
 
