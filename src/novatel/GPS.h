@@ -69,7 +69,7 @@ public:
 	inline gps_time get_gps_time() const {boost::mutex::scoped_lock(_gps_time_lock); return _gps_time;}
 
 	/// signal when gps measurement is updated
-	boost::signals2<void ()> gps_updated;
+	boost::signals2::signal<void ()> gps_updated;
 
 private:
 
@@ -88,28 +88,28 @@ private:
 	/// serialize access to llh_position
 	boost::mutex llh_position_lock;
 	/// threadsafe set llh_position
-	inline void set_llh_position(const boost::vector<double>& llh) {boost::mutex::scoped_lock(llh_position_lock); llh_position = llh;}
+	inline void set_llh_position(const blas::vector<double>& llh) {boost::mutex::scoped_lock(llh_position_lock); llh_position = llh;}
 
 	/// container for ned_velocity
 	blas::vector<double> ned_velocity;
 	/// serialize access to ned_velocity
 	boost::mutex ned_velocity_lock;
 	/// threadsafe set ned_velocity
-	inline void set_ned_velocity(const boost::vector<double>& ned_vel) {boost::mutex::scoped_lock(ned_velocity_lock); ned_velocity = ned_vel;}
+	inline void set_ned_velocity(const blas::vector<double>& ned_vel) {boost::mutex::scoped_lock(ned_velocity_lock); ned_velocity = ned_vel;}
 
 	/// container for pos error std dev
 	blas::vector<double> pos_sigma;
 	/// serialize access to pos_sigma
 	boost::mutex pos_sigma_lock;
 	/// threadsafe set pos_sigma
-	inline void set_pos_sigma(const boost::vector<double>& pos_error) {boost::mutex::scoped_lock(pos_sigma_lock); pos_sigma = pos_error;}
+	inline void set_pos_sigma(const blas::vector<double>& pos_error) {boost::mutex::scoped_lock(pos_sigma_lock); pos_sigma = pos_error;}
 
 	/// container for velocity error std dev
 	blas::vector<double> vel_sigma;
 	/// serialize access to vel_sigma
 	boost::mutex vel_sigma_lock;
 	/// threadsafe set vel sigma
-	inline void set_vel_sigma(const boost::vector<double>& vel_error) {boost::mutex::scoped_lock(vel_sigma_lock); vel_sigma = vel_error;}
+	inline void set_vel_sigma(const blas::vector<double>& vel_error) {boost::mutex::scoped_lock(vel_sigma_lock); vel_sigma = vel_error;}
 
 	/// container for gps_time
 	gps_time _gps_time;
@@ -143,6 +143,10 @@ private:
 	/// convert an integer type (signed or unsigned) to raw
 	template <typename IntegerType>
 	static std::vector<uint8_t> int_to_raw(const IntegerType i);
+
+	/// convert a floating point type to raw
+	template <typename FloatingType>
+	static std::vector<uint8_t> float_to_raw(const FloatingType f);
 };
 
 
@@ -201,6 +205,17 @@ std::vector<uint8_t> GPS::int_to_raw(const IntegerType i)
 	{
 		result[i] = byte[i];
 	}
+	return result;
+}
+
+template <typename FloatingType>
+std::vector<uint8_t> GPS::float_to_raw(const FloatingType f)
+
+{
+	std::vector<uint8_t> result(sizeof(FloatingType));
+	const uint8_t* byte = reinterpret_cast<const uint8_t*>(&f);
+	for (size_t i = 0; i< sizeof(FloatingType); i++)
+		result[i] = byte[i];
 	return result;
 }
 

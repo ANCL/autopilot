@@ -20,6 +20,12 @@
 #ifndef NOVATEL_READ_SERIAL_H_
 #define NOVATEL_READ_SERIAL_H_
 
+/* c headers */
+#include <stdint.h>
+
+/* STL Headers */
+#include <vector>
+
 /* Project Headers */
 #include "GPS.h"
 
@@ -29,6 +35,7 @@
 	 * double vector.
 	 * @author Bryan Godbolt <godbolt@ece.ualberta.ca>
 	 * @author Aakash Vasudevan <avasudev@ualberta.ca>
+	 * @date April 27, 2012: rewrote and refactored to integrate novatel with gx3
 	 */
 class GPS::read_serial
 {
@@ -52,41 +59,6 @@ public:
 	 */
 	void readPort();
 
-	class oem4_binary_header;
-	/**
-	 * @brief Class to send the 'log' command to the GPS unit
-	 */
-	class log_command_data
-	{
-	public:
-		log_command_data();
-		friend Debug& operator<<(Debug& dbg, const log_command_data& logcom);
-	private:
-		unsigned long	port;
-	    unsigned short	msgID;
-	    unsigned char	msgtype;
-	    unsigned char	reserved;
-	    unsigned long	trigger;
-	    double			period;
-	    double			offset;
-	    unsigned long	hold;
-
-	};
-
-	/**
-	 * @brief Class to send the 'unlog' command to GPS unit
-	 */
-	class unlog_command_data
-	{
-	public:
-		unlog_command_data();
-
-	private:
-		unsigned long port;
-		unsigned short msgId;
-		unsigned char msgtype;
-		unsigned char reserved;
-	};
 
 	/// All possible errors that could be encountered when receiving data from GPS unit.
 	enum OEM4_RETURN_CODES
@@ -111,59 +83,33 @@ public:
 		DONOTHING
 	};
 private:
-	/** Sends the 'log' command to the GPS unit.  Automatically appends
+	/** Sends the log command to the GPS unit.  Automatically appends
 	 *  the CRC by determining length of header and subsequent data
-	 *  @param binhdr const reference to the object of class oem4_binary_header (must be initialized appropriately)
-	 *  @param data const reference to the object of class unlog_data (must be initialized)
 	 */
-	void sendLogCommand(const oem4_binary_header& binhdr, const log_command_data& data);
+	void send_log_command();
 
 	/** Send the 'unlog' command to the GPS unit. Automatically appends
 	 * the CRC by determining the length of the header and subsequent data
 	 * @param binhd const reference to the object of class oem4_binary_header (must be initialized appropriately)
 	 * @param data const reference to the object of class unlog_data (must be initialized)
 	 */
-	void sendUnlogCommand(const oem4_binary_header& binhd, const unlog_command_data& data);
+	void send_unlog_command();
 
-	/**
-	 *  Calculation of the CRC32 for a block separated into
-	 *  binary header and data segments.
-	 *  @param binhdr const reference to the object of class oem4_binary_header (must be initialized according to the command)
-	 *  @param data pointer to the array containing the data of the log message
-	 *  @return checksum of the message (CRC32)
-	 */
-	unsigned long calculateCRC32(const oem4_binary_header& binhdr, unsigned char* data);
+	static std::vector<uint8_t> generate_header(uint16_t message_id, uint16_t message_length);
 
-	///Used by CalculateCRC32 function
-	unsigned long CRC32Value(int i);
+	static std::vector<uint8_t> compute_checksum(const std::vector<uint8_t>& message);
 
-	/**
-	 * Reads the serial port for GPS log message and stores the header and data of the message
-	 * into the passed arguments
-	 * @param binhdr reference to the object of class oem4_binary_header, header data from message stored in this object
-	 * @param data pointer to the array that should contain the data of the message, log data from message stored in this array
-	 * @return error code
-	 */
-	int receiveResponse(oem4_binary_header& binhdr, uint8_t* data);
+	///Used by compute_checksum function
+	static unsigned long CRC32Value(int i);
 
-	/**
-	 * Parses the array containing the log message and stores all the data in a double vector
-	 * @param comdata pointer to the array containing the log message
-	 * @return a double vector containing all the data from the log message
-	 */
-	std::vector<double> parseComData(uint8_t *comdata);
-
-	/**
-	 * Responds to the error specified by errorcode
-	 * @param errorcode Specifies the error encountered
-	 * @return Response to the error
-	 */
-	int errorResponse(int errorcode);
-
-	const unsigned long CRC32_POLYNOMIAL;
+	static const unsigned long CRC32_POLYNOMIAL = 0xEDB88320L;
 	const int MAXSERIALRECEIVESIZE;
 
 	/// serial port file descriptor
 	int fd_ser;
+
+
 };
+
+
 #endif
