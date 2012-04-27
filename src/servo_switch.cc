@@ -219,7 +219,7 @@ void servo_switch::read_serial::parse_pulse_inputs(const std::vector<uint8_t>& p
 void servo_switch::read_serial::parse_aux_inputs(const std::vector<uint8_t>& payload)
 {
 	uint16_t time_measurement;
-	double rpm;
+	std::vector<double> rpm(1, 0);
 	std::bitset<8> meas_byte (payload[2]);
 
 	if(meas_byte.test(7))
@@ -237,7 +237,7 @@ void servo_switch::read_serial::parse_aux_inputs(const std::vector<uint8_t>& pay
 
 	time_measurement = (static_cast<uint16_t>(meas_byte.to_ulong()) << 8) + payload[3];
 
-	rpm = 60 / (time_measurement*32.0*0.000001);
+	rpm[0] = 60 / (time_measurement*32.0*0.000001);
 
 	LogFile *log = LogFile::getInstance();
 	log->logData(heli::LOG_INPUT_RPM, rpm);

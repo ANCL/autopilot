@@ -41,6 +41,7 @@
 #include <signal.h>
 #include <sys/netmgr.h>
 #include <sys/neutrino.h>
+#include <bitset>
 
 /* File Handling Headers */
 #include <sys/types.h>
