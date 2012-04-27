@@ -35,7 +35,16 @@ gps_time::gps_time(uint16_t week, uint32_t milliseconds)
 	seconds = (static_cast<double>(milliseconds))/1000;
 }
 
+gps_time& gps_time::operator=(const gps_time& rhs)
+{
+	week = rhs.week;
+	seconds = rhs.seconds;
+	return *this;
+}
+
 Debug& operator<<(Debug& dbg, const gps_time& gt)
 {
 	return dbg << "Time of week: " << gt.week << ", seconds: " << gt.seconds;
 }
+
+

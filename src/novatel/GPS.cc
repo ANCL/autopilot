@@ -22,9 +22,6 @@
 /* Project Headers */
 #include "novatel_read_serial.h"
 
-/* GSL Headers */
-#include <gsl/gsl_blas.h>
-
 /* C Headers */
 #include <math.h>
 

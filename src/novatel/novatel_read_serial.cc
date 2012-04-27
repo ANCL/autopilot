@@ -28,10 +28,9 @@
 #include <termios.h>
 #include <math.h>
 
-#include <noem4hdr.h>
 
 /* Project Headers */
-#include "oem4_binary_header.h"
+//#include "oem4_binary_header.h"
 #include "Debug.h"
 
 /* read_serial functions */
@@ -61,7 +60,7 @@ void GPS::read_serial::initPort()
 	fd_ser = open(port.c_str(), O_RDWR);
 	  if(fd_ser == -1)
 	  {
-		  critical() << "Unable to open port " << port;
+		  critical() << "Unable to open novatel port " << port;
 	  }
 
 	  struct termios port_config;
