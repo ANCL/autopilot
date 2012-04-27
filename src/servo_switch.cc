@@ -41,6 +41,7 @@ servo_switch::servo_switch()
 	LogFile *log = LogFile::getInstance();
 	log->logHeader(heli::LOG_INPUT_PULSE_WIDTHS, "CH1 CH2 CH3 CH4 CH5 CH6 CH7 CH8 CH9");
 	log->logHeader(heli::LOG_OUTPUT_PULSE_WIDTHS, "CH1 CH2 CH3 CH4 CH5 CH6 CH7 CH8 CH9");
+	log->logHeader(heli::LOG_INPUT_RPM, "RPM");
 }
 
 servo_switch::~servo_switch()
@@ -190,8 +191,13 @@ void servo_switch::read_serial::parse_message(uint8_t id, const std::vector<uint
 		parse_pulse_inputs(payload);
 		break;
 	}
+	case 14:
+	{
+		parse_aux_inputs(payload);
+		break;
+	}
 	default:
-		debug() << "Received unkown message from servo switch";
+		debug() << "Received unknown message from servo switch";
 	}
 }
 
@@ -210,6 +216,32 @@ void servo_switch::read_serial::parse_pulse_inputs(const std::vector<uint8_t>& p
     log->logData(heli::LOG_INPUT_PULSE_WIDTHS, pulse_inputs);
 }
 
+void servo_switch::read_serial::parse_aux_inputs(const std::vector<uint8_t>& payload)
+{
+	uint16_t time_measurement;
+	double rpm;
+	std::bitset<8> meas_byte (payload[2]);
+
+	if(meas_byte.test(7))
+	{
+		warning() << "Time measurement over range";
+		return ;
+	}
+	if(!meas_byte.test(6))
+	{
+		debug() << "Time measurement is not running";
+	}
+
+	meas_byte.set(7,0);
+	meas_byte.set(6,0);
+
+	time_measurement = (static_cast<uint16_t>(meas_byte.to_ulong()) << 8) + payload[3];
+
+	rpm = 60 / (time_measurement*32.0*0.000001);
+
+	LogFile *log = LogFile::getInstance();
+	log->logData(heli::LOG_INPUT_RPM, rpm);
+}
 
 
 void servo_switch::read_serial::find_next_header()

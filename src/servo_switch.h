@@ -74,6 +74,7 @@ public:
 		void sync();
 		void parse_message(uint8_t id, const std::vector<uint8_t>& payload);
 		void parse_pulse_inputs(const std::vector<uint8_t>& payload);
+		void parse_aux_inputs(const std::vector<uint8_t>& payload);
 		void find_next_header();
 	};
 
