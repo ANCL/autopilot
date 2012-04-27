@@ -83,6 +83,7 @@ const std::string LOG_NOVATEL_GPS_ALL = "Novatel GPS (All Measurements)";
 const std::string LOG_INPUT_PULSE_WIDTHS = "Input Pulse Widths";
 const std::string LOG_SCALED_INPUTS = "Scaled Inputs";
 const std::string LOG_OUTPUT_PULSE_WIDTHS = "Output Pulse Widths";
+const std::string LOG_INPUT_RPM = "Engine RPM";
 
 // gx3 logs
 const std::string LOG_LLH_POS = "GX3 Estimated LLH Position";
