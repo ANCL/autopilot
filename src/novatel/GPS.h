@@ -20,11 +20,16 @@
 #ifndef GPS_H_
 #define GPS_H_
 
-/* GSL Headers */
-#include <gsl/gsl_matrix.h>
+/* Boost Headers */
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+namespace blas = boost::numeric::ublas;
+#include <boost/signals2/signal.hpp>
+#include <boost/thread.hpp>
 
 /* Project Headers */
 #include "Debug.h"
+#include "gps_time.h"
 
 /**
  * @brief Read position and velocity measurements from the Novatel GPS.
@@ -40,6 +45,7 @@
  *
  * @date January 2012: Class creation and initial implementation
  * @date February 16, 2012: Refactored into separate files
+ * @date April 27, 2012: Completed work to integrate novatel with gx3
  */
 
 class GPS
@@ -49,127 +55,21 @@ public:
 
 	static GPS* getInstance();
 
-	/**
-	 * Checks if the current GPS position data is valid (Invalid if the past 5 successive GPS position data type is less than 34, otherwise valid)
-	 * The variable to track the number of successive data with GPS position type less than 34 is incremented in GPS::read_serial_read_port().
-	 * @return true if valid, otherwise false
-	 */
-	bool pos_is_valid();
-
-	/**
-	 * Checks if the current velocity GPS data is valid (Invalid if the past 5 successive GPS velocity data type is less than 34, otherwise valid)
-	 * The variable to track the number of successive data with GPS velocity type less than 34 is incremented in GPS::read_serial_read_port().
-	 * @return true if valid, otherwise false
-	 */
-	bool vel_is_valid();
-
-
 	class read_serial;
 
+	/// threadsafe get llh_position
+	inline blas::vector<double> get_llh_position() const {boost::mutex::scoped_lock(llh_position_lock); return llh_position;}
+	/// threadsafe get ned_velocity
+	inline blas::vector<double> get_ned_velocity() const {boost::mutex::scoped_lock(ned_velocity_lock); return ned_velocity;}
+	/// threadafe get position error std dev
+	inline blas::vector<double> get_pos_sigma() const {boost::mutex::scoped_lock(pos_sigma_lock); return pos_sigma;}
+	/// threadsafe get vel error std dev
+	inline blas::vector<double> get_vel_sigma() const {boost::mutex::scoped_lock(vel_sigma_lock); return vel_sigma;}
+	/// threadsafe get gps time
+	inline gps_time get_gps_time() const {boost::mutex::scoped_lock(_gps_time_lock); return _gps_time;}
 
-
-
-	/** @brief This class contains the output of the novatel gps
-	 * The output is stored in a double vector that can be accessed using
-	 * accessors defined in the class.
-	 */
-	class gps_output
-	{
-	public:
-		explicit gps_output(std::vector<double> com_data = std::vector<double>(22));
-
-		/* From page 291 of Novatel documentation vol.2 */
-		/* Accessors */
-		double pos_x() {return com_data[2];}
-		double pos_y() {return com_data[3];}
-		double pos_z() {return com_data[4];}
-
-		double pos_stddev_x() {return com_data[5];}
-		double pos_stddev_y() {return com_data[6];}
-		double pos_stddev_z() {return com_data[7];}
-
-		double vel_x() {return com_data[10];}
-		double vel_y() {return com_data[11];}
-		double vel_z() {return com_data[12];}
-
-		double vel_stddev_x() {return com_data[13];}
-		double vel_stddev_y() {return com_data[14];}
-		double vel_stddev_z() {return com_data[15];}
-
-		/// @returns position solution type
-		double pos_type() {return com_data[1];}
-		/// @returns velocity solution type
-		double vel_type() {return com_data[9];}
-
-		/// @returns the data as a vector (intended for logging)
-		inline const std::vector<double>& data() const {return com_data;}
-
-	private:
-		std::vector<double> com_data;
-
-	};
-
-	class ned_coordinates
-	{
-	public:
-		ned_coordinates();
-		double pos_x() const {return position[0];}
-		double pos_y() const {return position[1];}
-		double pos_z() const {return position[2];}
-
-
-		double vel_x() const {return velocity[0];}
-		double vel_y() const {return velocity[1];}
-		double vel_z() const {return velocity[2];}
-
-		void set_pos(const gsl_vector* current_coords);
-		void set_vel(const gsl_vector* current_velocities);
-
-		operator std::vector<double>();
-		const boost::array<double, 3>& getPosition() const {return position;}
-		const boost::array<double, 3>& getVelocity() const {return velocity;}
-
-		friend Debug& operator<<(Debug& dbg, const ned_coordinates& coord);
-	private:
-		boost::array<double, 3> position;
-		boost::array<double, 3> velocity;
-	};
-
-	class ned_origin
-	{
-	public:
-		explicit ned_origin( double x=0, double y=0, double z=0, double lattitude=0, double longitude=0);
-		ned_origin(const ned_origin& other);
-		virtual ~ned_origin();
-		const double& x() const {return _x;}
-		double& x() {return _x;}
-		const double& y() const {return _y;}
-		double& y() {return _y;}
-		const double& z() const {return _z;}
-		double& z() {return _z;}
-		const double& longitude() const {return _longitude;}
-		double& longitude() {return _longitude;}
-		const double& lattitude() const {return _lattitude;}
-		double& lattitude() {return _lattitude;}
-		const gsl_matrix* ned_rotation() const {return _ned_rotation;}
-		const ned_origin& operator=(const ned_origin& other);
-	private:
-		double _x;
-		double _y;
-		double _z;
-		double _longitude;
-		double _lattitude;
-
-		gsl_matrix *_ned_rotation;
-	};
-
-	/// returns a copy of the current gps measurement see GPS::_gps_data
-	gps_output gps_data();
-
-	ned_coordinates ned_coords();
-
-	/// Returns the current ned coordinates representation for the current gps measurement see GPS::_ned_coords
-	const ned_coordinates get_ned_coords();
+	/// signal when gps measurement is updated
+	boost::signals2::signal<void ()> gps_updated;
 
 private:
 
@@ -183,75 +83,40 @@ private:
 	/// thread used to communicate with the GPS
 	boost::thread read_serial_thread;
 
-	/**
-	 * The data member stores the current gps measurement.  This measurement is always updated even if the solution type is not valid.
-	 * Therefore this value should not be used as feedback for a controller.  For a value suitable for feedback see GPS::_ned_coords
-	 */
-	gps_output _gps_data;
+	/// container for llh_position
+	blas::vector<double> llh_position;
+	/// serialize access to llh_position
+	boost::mutex llh_position_lock;
+	/// threadsafe set llh_position
+	inline void set_llh_position(const blas::vector<double>& llh) {boost::mutex::scoped_lock(llh_position_lock); llh_position = llh;}
 
-	/// serialize access to gps_data
-	boost::mutex _gps_data_lock;
+	/// container for ned_velocity
+	blas::vector<double> ned_velocity;
+	/// serialize access to ned_velocity
+	boost::mutex ned_velocity_lock;
+	/// threadsafe set ned_velocity
+	inline void set_ned_velocity(const blas::vector<double>& ned_vel) {boost::mutex::scoped_lock(ned_velocity_lock); ned_velocity = ned_vel;}
 
-	/**
-	 * This member contains the current GPS mesurement in NED coordinates.  Unlike GPS::_gps_data it is updated only when both the
-	 * position and velocity solution types are greater than or equal to 34.
-	 */
-	ned_coordinates _ned_coords;
+	/// container for pos error std dev
+	blas::vector<double> pos_sigma;
+	/// serialize access to pos_sigma
+	boost::mutex pos_sigma_lock;
+	/// threadsafe set pos_sigma
+	inline void set_pos_sigma(const blas::vector<double>& pos_error) {boost::mutex::scoped_lock(pos_sigma_lock); pos_sigma = pos_error;}
 
-	/// serialize access to _ned_coords
-	boost::mutex _ned_coords_lock;
+	/// container for velocity error std dev
+	blas::vector<double> vel_sigma;
+	/// serialize access to vel_sigma
+	boost::mutex vel_sigma_lock;
+	/// threadsafe set vel sigma
+	inline void set_vel_sigma(const blas::vector<double>& vel_error) {boost::mutex::scoped_lock(vel_sigma_lock); vel_sigma = vel_error;}
 
-	/// computes the current ned coordinate representation for the current gps measurement
-	void set_ned_coords();
-
-
-	ned_origin _ned_origin;
-	void set_ned_origin(const ned_origin& origin);
-	ned_origin get_ned_origin();
-	boost::mutex _ned_origin_lock;
-
-	heli::GPS_MODE mode;
-	boost::mutex mode_lock;
-
-	heli::GPS_MODE get_mode();
-	void set_mode(heli::GPS_MODE mode);
-
-	///Number of consecutive data received with position type less than 34
-	int _pos_count;
-	///Makes access to _pos_count threadsafe
-	boost::mutex _pos_count_lock;
-
-	inline void increment_pos_count() {boost::mutex::scoped_lock lock(_pos_count_lock); _pos_count++;}
-	inline void reset_pos_count() {boost::mutex::scoped_lock lock(_pos_count_lock); _pos_count = 0;}
-
-	///Number of consecutive data received with velocity type less than 34
-	int _vel_count;
-	///Makes access to _vel_count threadsafe
-	boost::mutex _vel_count_lock;
-
-	inline void increment_vel_count() {boost::mutex::scoped_lock lock(_vel_count_lock); _vel_count++;}
-	inline void reset_vel_count() {boost::mutex::scoped_lock lock(_vel_count_lock); _vel_count = 0;}
-
-	/**
-	 * Update the GPS data with the new measurement. This function also
-	 * logs the new value.
-	 * @param comdata double vector of data from GPS
-	 */
-//	void setGPSData(const std::vector<double>& comdata);
-	void setGPSData(const gps_output& comdata);
-
-	bool _terminate;
-	boost::mutex _terminate_lock;
-	bool check_terminate();
-
-	/**
-	 * @brief Class to terminate communication with GPS. Called when SIGINT is received.
-	 */
-	class terminate
-	{
-	public:
-		void operator()();
-	};
+	/// container for gps_time
+	gps_time _gps_time;
+	/// serialize access to gps_time
+	boost::mutex _gps_time_lock;
+	/// threadsafe set gps_time
+	inline void set_gps_time(const gps_time& time) {boost::mutex::scoped_lock(_gps_time_lock); _gps_time = time;}
 
 	/// convert a raw string of bytes received from the novatel to an unsigned integer
 	template <typename ReturnType, typename IteratorType>
@@ -278,6 +143,10 @@ private:
 	/// convert an integer type (signed or unsigned) to raw
 	template <typename IntegerType>
 	static std::vector<uint8_t> int_to_raw(const IntegerType i);
+
+	/// convert a floating point type to raw
+	template <typename FloatingType>
+	static std::vector<uint8_t> float_to_raw(const FloatingType f);
 };
 
 
@@ -336,6 +205,17 @@ std::vector<uint8_t> GPS::int_to_raw(const IntegerType i)
 	{
 		result[i] = byte[i];
 	}
+	return result;
+}
+
+template <typename FloatingType>
+std::vector<uint8_t> GPS::float_to_raw(const FloatingType f)
+
+{
+	std::vector<uint8_t> result(sizeof(FloatingType));
+	const uint8_t* byte = reinterpret_cast<const uint8_t*>(&f);
+	for (size_t i = 0; i< sizeof(FloatingType); i++)
+		result[i] = byte[i];
 	return result;
 }
 

@@ -46,6 +46,9 @@ public:
 	/// format the print the gps time
 	friend Debug& operator<<(Debug& dbg, const gps_time& gt);
 
+	/// assignment operator to copy gps_time
+	gps_time& operator=(const gps_time& rhs);
+
 	/// get the week
 	inline uint16_t get_week() const {return week;}
 	/// get the seconds
