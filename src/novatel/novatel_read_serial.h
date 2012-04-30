@@ -54,10 +54,10 @@ public:
 
 	void operator()();
 
-	/**
-	 * Send the log command for the required data
-	 */
-	void requestData();
+
+
+
+
 	/**
 	 * Function to read data from the serial port and send the output data to
 	 * GPS class
@@ -80,8 +80,6 @@ private:
 	 * Initialize serial port COM2
 	 */
 	void initPort();
-
-	void reinitialize();
 
 	/** Sends the log command to the GPS unit.  Automatically appends
 	 *  the CRC by determining length of header and subsequent data

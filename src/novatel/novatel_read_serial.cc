@@ -42,7 +42,7 @@
 
 /* read_serial functions */
 GPS::read_serial::read_serial()
-: data_request_successful(false)
+
 {
 }
 
@@ -112,7 +112,7 @@ void GPS::read_serial::readPort()
 //	while(!GPS::getInstance()->check_terminate())
 	while (true)
 	{
-		if ((boost::posix_time::microsec_clock::local_time() - last_data).total_seconds > 3)
+		if ((boost::posix_time::microsec_clock::local_time() - last_data).total_milliseconds > 3)
 		{
 			send_unlog_command();
 			boost::this_thread::sleep(boost::posix_time::milliseconds(100));
@@ -144,7 +144,7 @@ void GPS::read_serial::readPort()
 				continue;
 			}
 
-			int data_size = raw_to_int<uint16_6>(header.begin() + 5);
+			int data_size = raw_to_int<uint16_t>(header.begin() + 5);
 			std::vector<uint8_t> log_data(data_size);
 			bytes = readcond(fd_ser, &log_data[0], data_size, data_size, 10, 10);
 			if (bytes < data_size)
@@ -234,10 +234,10 @@ void GPS::read_serial::parse_header(const std::vector<uint8_t>& header, std::vec
 	uint32_t time_status = parse_enum(header, 10);
 	log += time_status;
 	it += 4;
-	uint16_t week = raw_to_uint16(it);
+	uint16_t week = raw_to_int<uint16_t>(it);
 	log += week;
 	it += 2;
-	uint32_t milliseconds = raw_to_uint32(it);
+	uint32_t milliseconds = raw_to_int<uint32_t>(it);
 	log += milliseconds;
 	GPS::getInstance()->set_gps_time(gps_time(week, milliseconds, static_cast<gps_time::TIME_STATUS>(time_status)));
 }
@@ -286,7 +286,7 @@ void GPS::read_serial::parse_log(const std::vector<uint8_t>& data, std::vector<d
 
 uint GPS::read_serial::parse_enum(const std::vector<uint8_t>& log, int offset)
 {
-	return raw_to_uint32(log.begin() + offset);
+	return raw_to_int<uint32_t>(log.begin() + offset);
 }
 
 blas::vector<double> GPS::read_serial::ecef_to_llh(const blas::vector<double>& ecef)
