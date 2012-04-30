@@ -32,6 +32,9 @@
 #include <math.h>
 #include <stdint.h>
 
+/* Boost Headers */
+#include <boost/thread.hpp>
+
 /* Project Headers */
 //#include "oem4_binary_header.h"
 #include "Debug.h"
@@ -39,14 +42,7 @@
 
 /* read_serial functions */
 GPS::read_serial::read_serial()
-://CRC32_POLYNOMIAL(0xEDB88320L),
- MAXSERIALRECEIVESIZE(4096)
-{
-}
-
-GPS::read_serial::read_serial(const read_serial& other)
-://CRC32_POLYNOMIAL(0xEDB88320L),
- MAXSERIALRECEIVESIZE(4096)
+: data_request_successful(false)
 {
 }
 
@@ -56,6 +52,7 @@ void GPS::read_serial::operator()()
 	initPort();
 	send_log_command();
 	readPort();
+	send_unlog_command();
 }
 
 void GPS::read_serial::initPort()
@@ -111,9 +108,16 @@ void GPS::read_serial::readPort()
 
 	uint8_t sync_byte = 0;
 
+	// todo add in check terminate
 //	while(!GPS::getInstance()->check_terminate())
 	while (true)
 	{
+		if ((boost::posix_time::microsec_clock::local_time() - last_data).total_seconds > 3)
+		{
+			send_unlog_command();
+			boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+			send_log_command();
+		}
 
 		int bytes = readcond(fd_ser, &sync_byte, 1, 1, 10, 10);
 		if (bytes < 1);
@@ -140,7 +144,7 @@ void GPS::read_serial::readPort()
 				continue;
 			}
 
-			int data_size = 112;
+			int data_size = raw_to_int<uint16_6>(header.begin() + 5);
 			std::vector<uint8_t> log_data(data_size);
 			bytes = readcond(fd_ser, &log_data[0], data_size, data_size, 10, 10);
 			if (bytes < data_size)
@@ -169,24 +173,45 @@ void GPS::read_serial::readPort()
 				continue;
 			}
 
-			// test to make sure it is rtkxyz
-			if (raw_to_uint16(header.begin() + 1) != 244)
+			uint16_t message_id = raw_to_int<uint16_t>(header.begin() + 1);
+
+			switch (message_id)
 			{
-				debug() << "Received message from novatel which wasn't an RTKXYZ message.";
+			case 244:  // RTKXYZ
+			{
+				if (is_response(header))
+				{
+					switch(parse_enum(log_data))
+					{
+					case OEM4OK:
+						message() << "Novatel data logging successfully initialized";
+						break;
+					case OEM4_CRC_MISMATCH:
+						warning() << "Novatel reports checksum failure";
+						break;
+					}
+				}
+				else
+				{
+					std::vector<double> log;
+					parse_header(header, log);
+					parse_log(log_data, log);
+					last_data = boost::posix_time::microsec_clock::local_time();
+				}
+				break;
+			}
+			default:
+			{
+				warning() << "Received unexpected message from Novatel with id: " << message_id;
 				continue;
 			}
-
-			std::vector<double> log;
-			parse_header(header, log);
-			parse_log(log_data, log);
+			}
 
 		}
 		else
 		{
 			sync_bytes.reset();
 		}
-
-
 	}
 //
 //	debug() << "GPS received terminate, sending 'unlog' command";
@@ -197,26 +222,66 @@ void GPS::read_serial::readPort()
 //	sendUnlogCommand(binhd, unlog_data);
 }
 
+bool GPS::read_serial::is_response(const std::vector<uint8_t>& header)
+{
+	std::bitset<8> message_type(header[3]);
+	return message_type[7];
+}
+
 void GPS::read_serial::parse_header(const std::vector<uint8_t>& header, std::vector<double>& log)
 {
 	std::vector<uint8_t>::const_iterator it = header.begin() + 10;
-	uint32_t time_status = raw_to_uint32(it);
+	uint32_t time_status = parse_enum(header, 10);
+	log += time_status;
 	it += 4;
 	uint16_t week = raw_to_uint16(it);
+	log += week;
 	it += 2;
 	uint32_t milliseconds = raw_to_uint32(it);
+	log += milliseconds;
 	GPS::getInstance()->set_gps_time(gps_time(week, milliseconds, static_cast<gps_time::TIME_STATUS>(time_status)));
 }
 
 void GPS::read_serial::parse_log(const std::vector<uint8_t>& data, std::vector<double>& log)
 {
 	GPS& gps = *GPS::getInstance();
-	gps.set_position_status(parse_enum(data));
-	gps.set_position_type(parse_enum(data, 4));
 
-	blas::vector<double> llh(ecef_to_llh(parse_3floats<double>(data, 8)));
+	uint pos_status = parse_enum(data);
+	log += pos_status;
+	gps.set_position_status(pos_status);
+
+	uint pos_type = parse_enum(data, 4);
+	log += pos_type;
+	gps.set_position_type(pos_type);
+
+	blas::vector<double> position(parse_3floats<double>(data, 8));
+	log.insert(log.end(), position.begin(), position.end());
+	blas::vector<double> llh(ecef_to_llh(position));
 	gps.set_llh_position(llh);
-	gps.set_ned_velocity(ecef_to_ned(parse_3floats<double>(data, 52), llh));
+
+	blas::vector<float> position_error(parse_3floats<float>(data, 32));
+	log.insert(log.end(), position_error.begin(), position_error.end());
+	gps.set_pos_sigma(ecef_to_ned(position_error, llh));
+
+	uint vel_status = parse_enum(data, 44);
+	log += vel_status;
+	gps.set_velocity_status(vel_status);
+
+	uint vel_type = parse_enum(data, 48);
+	log += vel_type;
+	gps.set_velocity_type(vel_type);
+
+	blas::vector<double> velocity(parse_3floats<double>(data, 52));
+	log.insert(log.end(), velocity.begin(), velocity.end());
+	gps.set_ned_velocity(ecef_to_ned(velocity, llh));
+
+	blas::vector<float> velocity_error(parse_3floats<float>(data, 76));
+	log.insert(log.end(), velocity_error.begin(), velocity_error.end());
+	gps.set_vel_sigma(ecef_to_ned(velocity_error, llh));
+
+	uint8_t num_sats = log[104];
+	log += num_sats;
+	gps.set_num_sats(num_sats);
 }
 
 uint GPS::read_serial::parse_enum(const std::vector<uint8_t>& log, int offset)
@@ -268,6 +333,7 @@ blas::vector<double> GPS::read_serial::ecef_to_llh(const blas::vector<double>& e
 
 void GPS::read_serial::send_unlog_command()
 {
+	// todo fill in this function
 	/* Calculate the CRC.*/
 //	unsigned long crc = calculateCRC32(binhd,(unsigned char*)&unlog_data);
 

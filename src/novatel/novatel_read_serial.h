@@ -34,6 +34,7 @@ using namespace boost::assign;
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 namespace blas = boost::numeric::ublas;
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 /* Project Headers */
 #include "GPS.h"
@@ -50,12 +51,9 @@ class GPS::read_serial
 {
 public:
 	read_serial();
-	read_serial(const read_serial& other);
+
 	void operator()();
-	/**
-	 * Initialize serial port COM2
-	 */
-	void initPort();
+
 	/**
 	 * Send the log command for the required data
 	 */
@@ -72,26 +70,19 @@ public:
 	/// All possible errors that could be encountered when receiving data from GPS unit.
 	enum OEM4_RETURN_CODES
 	{
-		OEM4OK,
-		OEM4ERROR_TIMEOUT_HEADER,
-		OEM4ERROR_TIMEOUT_DATA,
-		OEM4ERROR_TIMEOUT_CRC,
-		OEM4ERROR_CRC_MISMATCH,
-		OEM4ERROR_MISSING_INPUT_ARGS,
-		OEM4ERROR_MISSING_OUTPUT_SPACE,
-		OEM4ERROR_NOT_RESPONSE,
-		OEM4ERROR_COMMAND_FAILED,
-		OEM4ERROR_CATASTROPHIC
+		OEM4OK = 1,
+		OEM4_CRC_MISMATCH = 8
 	};
 
-	///Responses to error codes
-	enum ERROR_RESPONSES
-	{
-		STASHDATA=512,
-		BAILOUT,
-		DONOTHING
-	};
+
 private:
+	/**
+	 * Initialize serial port COM2
+	 */
+	void initPort();
+
+	void reinitialize();
+
 	/** Sends the log command to the GPS unit.  Automatically appends
 	 *  the CRC by determining length of header and subsequent data
 	 */
@@ -117,7 +108,6 @@ private:
 	static unsigned long CRC32Value(int i);
 
 	static const unsigned long CRC32_POLYNOMIAL = 0xEDB88320L;
-	const int MAXSERIALRECEIVESIZE;
 
 	/// serial port file descriptor
 	int fd_ser;
@@ -134,6 +124,12 @@ private:
 
 	/// convert ecef position measurement into llh
 	static blas::vector<double> ecef_to_llh(const blas::vector<double>& ecef);
+
+	/// check whether the header is from a response message
+	static bool is_response(const std::vector<uint8_t>& header);
+
+	/// stores the last time data was successfully received (for error handling)
+	boost::posix_time::ptime last_data;
 
 };
 template<typename FloatingType>

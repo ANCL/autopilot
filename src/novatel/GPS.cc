@@ -43,9 +43,9 @@ GPS::GPS()
 //  _vel_count(0),
 //  _terminate(false)
 {
-//	LogFile::getInstance()->logHeader(heli::LOG_NOVATEL_GPS, "P-sol_status pos_type P-X P-Y P-Z P-X_stddev P-Y_stddev P-Z_stddev "
-//			"V-sol_status vel_type V-X V-Y V-Z V-X_stddev V-Y_stddev V-Z_stddev "
-//			"V-latency diff_age sol_age #obs #GPSL1 #L1 #L2");
+	LogFile::getInstance()->logHeader(heli::LOG_NOVATEL_GPS, "Time_Status Week Milliseconds P-sol_status pos_type P-X P-Y P-Z P-X_stddev P-Y_stddev P-Z_stddev "
+			"V-sol_status vel_type V-X V-Y V-Z V-X_stddev V-Y_stddev V-Z_stddev "
+			"#obs");
 
 //	MainApp::add_thread(&read_serial_thread, "Novatel GPS");
 //	MainApp::terminate.connect(GPS::terminate());

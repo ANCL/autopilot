@@ -138,27 +138,38 @@ private:
 	boost::mutex num_sats_lock;
 	inline void set_num_sats(const uint8_t num) {boost::mutex::scoped_lock(num_sats_lock); num_sats = num;}
 
-	/// convert a raw string of bytes received from the novatel to an unsigned integer
-	template <typename ReturnType, typename IteratorType>
-	static ReturnType raw_to_uint(IteratorType first, IteratorType last);
-
-	/// convert a novatel long type to an integer
-	template <typename IteratorType>
-	static inline uint32_t raw_to_uint32(IteratorType first) {return raw_to_uint<uint32_t>(first, first + 4);}
-
-	/// convert a novatel short type to an integer
-	template <typename IteratorType>
-	static inline uint16_t raw_to_uint16(IteratorType first) {return raw_to_uint<uint16_t>(first, first + 2);}
+//	/// convert a raw string of bytes received from the novatel to an unsigned integer
+//	template <typename ReturnType, typename IteratorType>
+//	static ReturnType raw_to_uint(IteratorType first, IteratorType last);
+//
+//	/// convert a novatel long type to an integer
+//	template <typename IteratorType>
+//	static inline uint32_t raw_to_uint32(IteratorType first) {return raw_to_uint<uint32_t>(first, first + 4);}
+//
+//	/// convert a novatel short type to an integer
+//	template <typename IteratorType>
+//	static inline uint16_t raw_to_uint16(IteratorType first) {return raw_to_uint<uint16_t>(first, first + 2);}
 
 	/// convert a raw string of bytes to a signed integer
 	template <typename ReturnType, typename IteratorType>
 	static ReturnType raw_to_int(IteratorType first, IteratorType last);
 
-	template <typename IteratorType>
-	static inline int32_t raw_to_int32(IteratorType first) {return raw_to_int<int32_t>(first, first + 4);}
+	/**
+	 * @code
+	 * uint16_t message_id = raw_to_int<uint16_t>(header.begin() + 1);
+	 * @endcode
+	 */
+	template <typename ReturnType, typename IteratorType>
+	static inline ReturnType raw_to_int(IteratorType first) {return raw_to_int<ReturnType>(first, first + sizeof(ReturnType));}
 
-	template <typename IteratorType>
-	static inline int16_t raw_to_int16(IteratorType first) {return raw_to_int<int16_t>(first, first + 2);}
+//	template <typename IteratorType>
+//	static inline int32_t raw_to_int32(IteratorType first) {return raw_to_int<int32_t>(first, first + 4);}
+//
+//	template <typename IteratorType>
+//	static inline int16_t raw_to_int16(IteratorType first) {return raw_to_int<int16_t>(first, first + 2);}
+//
+//	template <typename IteratorType>
+//		static inline int16_t raw_to_int16(IteratorType first) {return raw_to_int<int16_t>(first, first + 2);}
 
 	template <typename FloatingType, typename IteratorType>
 	static FloatingType raw_to_float(IteratorType first, IteratorType last);
@@ -173,28 +184,28 @@ private:
 };
 
 
-template <typename ReturnType, typename IteratorType>
-ReturnType GPS::raw_to_uint(IteratorType first, IteratorType last)
-{
-	unsigned int data = 0; // uint is largest int type from novatel
-	for (IteratorType it = first; it != last; ++it)
-	{
-		data += *it;
-		data <<= 8;
-	}
-
-	switch (last - first)
-	{
-	case 1:
-		return static_cast<uint8_t>(data);
-		break;
-	case 2:
-		return static_cast<uint16_t>(data);
-		break;
-	default:
-		return data;
-	}
-}
+//template <typename ReturnType, typename IteratorType>
+//ReturnType GPS::raw_to_uint(IteratorType first, IteratorType last)
+//{
+//	unsigned int data = 0; // uint is largest int type from novatel
+//	for (IteratorType it = first; it != last; ++it)
+//	{
+//		data += *it;
+//		data <<= 8;
+//	}
+//
+//	switch (last - first)
+//	{
+//	case 1:
+//		return static_cast<uint8_t>(data);
+//		break;
+//	case 2:
+//		return static_cast<uint16_t>(data);
+//		break;
+//	default:
+//		return data;
+//	}
+//}
 
 template <typename ReturnType, typename IteratorType>
 ReturnType GPS::raw_to_int(IteratorType first, IteratorType last)
@@ -206,17 +217,8 @@ ReturnType GPS::raw_to_int(IteratorType first, IteratorType last)
 		data <<= 8;
 	}
 
-	switch (last - first)
-	{
-	case 1:
-		return static_cast<int8_t>(data);
-		break;
-	case 2:
-		return static_cast<int16_t>(data);
-		break;
-	default:
-		return data;
-	}
+	return static_cast<ReturnType>(data);
+
 }
 
 template <typename FloatingType, typename IteratorType>
