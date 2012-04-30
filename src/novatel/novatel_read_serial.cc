@@ -32,11 +32,6 @@
 #include <math.h>
 #include <stdint.h>
 
-/* Boost Headers */
-#include <boost/assign.hpp>
-// this scope only pollutes the global namespace in a minimal way consistent with the stl global operators
-using namespace boost::assign;
-
 /* Project Headers */
 //#include "oem4_binary_header.h"
 #include "Debug.h"
@@ -181,8 +176,9 @@ void GPS::read_serial::readPort()
 				continue;
 			}
 
-			parse_header(header);
-//			parse_log(log_data);
+			std::vector<double> log;
+			parse_header(header, log);
+			parse_log(log_data, log);
 
 		}
 		else
@@ -190,136 +186,7 @@ void GPS::read_serial::readPort()
 			sync_bytes.reset();
 		}
 
-//		int errorcode = receiveResponse(binhdr, comdata);
-//
-//		if(errorcode != OEM4OK)
-//		{
-//			err_response = errorResponse(errorcode);
-//		}
-//
-//
-//		if (binhdr.get_message_type() & 0x80)
-//		{
-//			uint32_t value_ulong;
-//			memcpy(&value_ulong, comdata, sizeof(uint32_t));
-//
-//			if (value_ulong == 1)
-//			{
-//				if (binhdr.get_message_id() == 1)
-//					debug() << "Log command sent successfully.";
-//				else
-//					debug() << "Unknown command sent successfully.";
-//			}
-//			else
-//				debug() << "Received error response from GPS";
-//
-//		}
-//
-//		gps_output gps_data;  // object to hold current measurement
-//		if(err_response == STASHDATA)
-//		{
-//			critical() << "Received STASHDATA from Novatel GPS";
-//			continue;
-//		}
-//		else if(err_response == BAILOUT)
-//		{
-//			critical() << "Received BAILOUT from Novatel GPS";
-//			continue;
-//		}
-//		else if(err_response == DONOTHING || err_response == 0)
-//		{
-//			gps_data = gps_output(parseComData(comdata));
-////			LogFile::getInstance()->logData(heli::LOG_NOVATEL_GPS_ALL, gps_data.data());
-//		}
-//		else
-//		{
-//			critical() << "Received unknown error code from Novatel GPS: " << errorcode;
-//			continue;
-//		}
-//		GPS::getInstance()->setGPSData(gps_data); // update the raw gps data regardless of mode or validity
-//		if (GPS::getInstance()->get_mode() == heli::MODE_GPS_UNINITIALIZED)
-//		{
-//			if (gps_data.pos_type() == 50)
-//				ned_origin_measurements.push_back(gps_data);
-//			else
-//				ned_origin_measurements.erase(ned_origin_measurements.begin(), ned_origin_measurements.end());
-//
-//			if (ned_origin_measurements.size() == 5)
-//			{
-//				GPS::getInstance()->setGPSData(gps_data);
-//				double x=0, y=0, z=0;
-//				for (int i=0; i<5; ++i)
-//				{
-//					x += ned_origin_measurements[i].pos_x();
-//					y += ned_origin_measurements[i].pos_y();
-//					z += ned_origin_measurements[i].pos_z();
-//				}
-//				x/=5;
-//				y/=5;
-//				z/=5;
-//
-//				/* Transformation from ECEF [x,y,z] to geodetic [phi,lamda,h] coordinates using Jay A. Farrel algorithm p.34 */
-//				// ECEF2GEO Parameters
-//				double lattitude = 0, longitude = 0;
-//				double a=6378137.0;
-//				double f=1.0/298.257223563;
-//				double e=sqrt(f*(2-f));
-//
-//				// Initialization
-//				double h=0;
-//				double RN=a;
-//				double p=sqrt(pow(x,2)+pow(y,2));
-//				double error_h;
-//				double prev_h=0;
-//				double sin_phi;
-//				double phi;
-//				double RN_phi;
-//
-//				// Iteration
-//				do
-//				{
-//					sin_phi=z/((1-pow(e,2))*RN+h);
-//					phi=atan((z+pow(e,2)*RN*sin_phi)/p);
-//					RN_phi=a/sqrt(1-pow(e,2)*pow(sin(phi),2));
-//					h= p/cos(phi)-RN_phi;
-//					error_h=h-prev_h;
-//					prev_h=h;
-//				}
-//				while(abs(error_h)>0.000001);
-//
-//				// Saving results (origin coordinates)
-//				lattitude=phi;
-//				longitude=atan2(y,x);
-//				warning() << "NED Origin set to " << boost::lexical_cast<std::string>(x) << ", " << boost::lexical_cast<std::string>(y) << ", " << boost::lexical_cast<std::string>(z);
-//				GPS::getInstance()->set_ned_origin(ned_origin(x,y,z, lattitude, longitude));
-//				GPS::getInstance()->set_mode(heli::MODE_GPS_INITIALIZED);
-//			}
-//		}
-//		else
-//		{
-//			bool pos_valid = false, vel_valid = false;
-//
-//			if(gps_data.pos_type() < 34.0)
-//				GPS::getInstance()->increment_pos_count();
-//			else
-//			{
-//				GPS::getInstance()->reset_pos_count();
-//				pos_valid = true;
-//			}
-//
-//			if(gps_data.vel_type() < 34.0)
-//				GPS::getInstance()->increment_vel_count();
-//			else
-//			{
-//				GPS::getInstance()->reset_vel_count();
-//				vel_valid = true;
-//			}
-//
-//			if (pos_valid && vel_valid) // only update measurement if it's valid!
-//			{
-//				GPS::getInstance()->set_ned_coords();
-//			}
-//		}
+
 	}
 //
 //	debug() << "GPS received terminate, sending 'unlog' command";
@@ -330,7 +197,7 @@ void GPS::read_serial::readPort()
 //	sendUnlogCommand(binhd, unlog_data);
 }
 
-void GPS::read_serial::parse_header(const std::vector<uint8_t>& header)
+void GPS::read_serial::parse_header(const std::vector<uint8_t>& header, std::vector<double>& log)
 {
 	std::vector<uint8_t>::const_iterator it = header.begin() + 10;
 	uint32_t time_status = raw_to_uint32(it);
@@ -341,15 +208,61 @@ void GPS::read_serial::parse_header(const std::vector<uint8_t>& header)
 	GPS::getInstance()->set_gps_time(gps_time(week, milliseconds, static_cast<gps_time::TIME_STATUS>(time_status)));
 }
 
-void GPS::read_serial::parse_log(const std::vector<uint8_t>& log)
+void GPS::read_serial::parse_log(const std::vector<uint8_t>& data, std::vector<double>& log)
 {
+	GPS& gps = *GPS::getInstance();
+	gps.set_position_status(parse_enum(data));
+	gps.set_position_type(parse_enum(data, 4));
 
+	blas::vector<double> llh(ecef_to_llh(parse_3floats<double>(data, 8)));
+	gps.set_llh_position(llh);
+	gps.set_ned_velocity(ecef_to_ned(parse_3floats<double>(data, 52), llh));
 }
 
 uint GPS::read_serial::parse_enum(const std::vector<uint8_t>& log, int offset)
 {
 	return raw_to_uint32(log.begin() + offset);
 }
+
+blas::vector<double> GPS::read_serial::ecef_to_llh(const blas::vector<double>& ecef)
+{
+	/* Transformation from ECEF [x,y,z] to geodetic [phi,lamda,h] coordinates using Jay A. Farrel algorithm p.34 */
+	// ECEF2GEO Parameters
+	blas::vector<double> llh(3);
+	llh.clear();
+
+	double a = 6378137.0;
+	double f = 1.0/298.257223563;
+	double e = sqrt(f*(2-f));
+
+	// Initialization
+	double RN = a;
+	double p=sqrt(pow(ecef[0],2)+pow(ecef[1],2));
+	double error_h = 0;
+	double prev_h = 0;
+	double sin_phi = 0;
+	double phi = 0;
+	double RN_phi = 0;
+
+	// Iteration
+	do
+	{
+		sin_phi = ecef[2]/((1 - pow(e,2))*RN + llh[2]);
+		phi = atan((ecef[2] + pow(e,2)*RN*sin_phi)/p);
+		RN_phi = a/sqrt(1 - pow(e,2)*pow(sin(phi),2));
+		llh[2] = p/cos(phi)-RN_phi;
+		error_h = llh[2] - prev_h;
+		prev_h = llh[2];
+	}
+	while(abs(error_h)>0.000001);
+
+	// Saving results (origin coordinates)
+	llh[0] = phi; //latitude
+	llh[1] = atan2(ecef[1], ecef[0]); //longitude
+
+	return llh;
+}
+
 
 
 
