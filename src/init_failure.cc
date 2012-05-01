@@ -47,3 +47,8 @@ init_failure& init_failure::operator=(const init_failure& other) throw()
 	message = other.message;
 	return *this;
 }
+
+Debug& operator<<(Debug& dbg, const init_failure& i)
+{
+	return dbg << i.message;
+}

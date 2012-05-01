@@ -54,10 +54,6 @@ public:
 
 	void operator()();
 
-
-
-
-
 	/**
 	 * Function to read data from the serial port and send the output data to
 	 * GPS class
@@ -93,12 +89,15 @@ private:
 	 */
 	void send_unlog_command();
 
+	/// generate a message header for the novatel
 	static std::vector<uint8_t> generate_header(uint16_t message_id, uint16_t message_length);
 
+	/// compute the checksum for a message
 	static std::vector<uint8_t> compute_checksum(const std::vector<uint8_t>& message);
 
 	/// parse the header and append the relevant field to the log
 	void parse_header(const std::vector<uint8_t>& header, std::vector<double>& log);
+
 	/// parse the message and append the relevant fields to the log
 	void parse_log(const std::vector<uint8_t>& data, std::vector<double>& log);
 

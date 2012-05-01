@@ -36,7 +36,6 @@
 #include <boost/thread.hpp>
 
 /* Project Headers */
-//#include "oem4_binary_header.h"
 #include "Debug.h"
 #include "init_failure.h"
 
@@ -48,21 +47,28 @@ GPS::read_serial::read_serial()
 
 void GPS::read_serial::operator()()
 {
-	debug() << "Initialize the serial port";
-	initPort();
+	try
+	{
+		debug() << "Initialize the Novatel serial port";
+		initPort();
+	}
+	catch(init_failure& i)
+	{
+		warning() << "" << i;
+
+	}
 	send_log_command();
 	readPort();
+	debug() << "Novatel receive thread terminated, sending unlog command.";
 	send_unlog_command();
 }
 
 void GPS::read_serial::initPort()
 {
-	std::string port = "/dev/ser1";
-	fd_ser = open(port.c_str(), O_RDWR);
+
+	fd_ser = open(serial_port.c_str(), O_RDWR);
 	  if(fd_ser == -1)
-	  {
-		  critical() << "Unable to open novatel port " << port;
-	  }
+		  throw init_failure("Unable to open novatel port: " + serial_port);
 
 	  struct termios port_config;
 
@@ -108,19 +114,21 @@ void GPS::read_serial::readPort()
 
 	uint8_t sync_byte = 0;
 
-	// todo add in check terminate
-//	while(!GPS::getInstance()->check_terminate())
-	while (true)
+	last_data = boost::posix_time::second_clock::local_time();
+
+	while(!GPS::getInstance()->check_terminate())
 	{
-		if ((boost::posix_time::microsec_clock::local_time() - last_data).total_milliseconds > 3)
+		if ((boost::posix_time::second_clock::local_time() - last_data).total_seconds() > 5)
 		{
+			warning() << "Stopped receiving data from Novatel.  Attempting to restart communication.";
 			send_unlog_command();
 			boost::this_thread::sleep(boost::posix_time::milliseconds(100));
 			send_log_command();
 		}
 
 		int bytes = readcond(fd_ser, &sync_byte, 1, 1, 10, 10);
-		if (bytes < 1);
+		if (bytes < 1)
+			continue;
 		else if (sync_byte == 0xAA)
 		{
 			// got first sync byte
@@ -196,7 +204,7 @@ void GPS::read_serial::readPort()
 					std::vector<double> log;
 					parse_header(header, log);
 					parse_log(log_data, log);
-					last_data = boost::posix_time::microsec_clock::local_time();
+					last_data = boost::posix_time::second_clock::local_time();
 				}
 				break;
 			}
@@ -213,13 +221,6 @@ void GPS::read_serial::readPort()
 			sync_bytes.reset();
 		}
 	}
-//
-//	debug() << "GPS received terminate, sending 'unlog' command";
-//
-//	unlog_command_data unlog_data;
-//	oem4_binary_header binhd(8, 36);
-//
-//	sendUnlogCommand(binhd, unlog_data);
 }
 
 bool GPS::read_serial::is_response(const std::vector<uint8_t>& header)
@@ -333,16 +334,11 @@ blas::vector<double> GPS::read_serial::ecef_to_llh(const blas::vector<double>& e
 
 void GPS::read_serial::send_unlog_command()
 {
-	// todo fill in this function
-	/* Calculate the CRC.*/
-//	unsigned long crc = calculateCRC32(binhd,(unsigned char*)&unlog_data);
-
-	//debug() << "CRC: " << std::hex << crc;
-
-	/* Send out the binary header. */
-//	while (write(fd_ser, (unsigned char *)&binhd, binhd.header_size()) < 0)
-
-
+	std::vector<uint8_t> command(generate_header(38, 8));
+	command.insert(command.end(), 8, 0);
+	std::vector<uint8_t> checksum(compute_checksum(command));
+	command.insert(command.end(), checksum.begin(), checksum.end());
+	write(fd_ser, &command[0], command.size());
 }
 
 std::vector<uint8_t> GPS::read_serial::generate_header(uint16_t message_id, uint16_t message_length)

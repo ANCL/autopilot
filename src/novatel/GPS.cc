@@ -21,12 +21,17 @@
 
 /* Project Headers */
 #include "novatel_read_serial.h"
+#include "MainApp.h"
+
+/* Boost Headers */
+#include <boost/bind.hpp>
 
 /* C Headers */
 #include <math.h>
 
 GPS* GPS::_instance = 0;
 boost::mutex GPS::_instance_lock;
+const std::string GPS::serial_port = "/dev/ser1";
 
 GPS* GPS::getInstance()
 {
@@ -37,18 +42,15 @@ GPS* GPS::getInstance()
 }
 
 GPS::GPS()
-: read_serial_thread(read_serial())
-//  mode(heli::MODE_GPS_UNINITIALIZED),
-//  _pos_count(0),
-//  _vel_count(0),
-//  _terminate(false)
+: read_serial_thread(read_serial()),
+  _terminate(false)
 {
 	LogFile::getInstance()->logHeader(heli::LOG_NOVATEL_GPS, "Time_Status Week Milliseconds P-sol_status pos_type P-X P-Y P-Z P-X_stddev P-Y_stddev P-Z_stddev "
 			"V-sol_status vel_type V-X V-Y V-Z V-X_stddev V-Y_stddev V-Z_stddev "
 			"#obs");
 
-//	MainApp::add_thread(&read_serial_thread, "Novatel GPS");
-//	MainApp::terminate.connect(GPS::terminate());
+	MainApp::add_thread(&read_serial_thread, "Novatel GPS");
+	MainApp::terminate.connect(boost::bind(&GPS::terminate, this));
 }
 
 GPS::~GPS()

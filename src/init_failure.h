@@ -20,18 +20,32 @@
 #ifndef INIT_FAILURE_H_
 #define INIT_FAILURE_H_
 
+/* STL Headers */
 #include <stdexcept>
 #include <string>
 
+/* Project Headers*/
+#include "Debug.h"
+
+
+/**
+ * @author Bryan Godbolt <godbolt@ece.ualberta.ca>
+ * @date February 2012: Class creation
+ * @date May 1, 2012: Added debug output
+ */
 class init_failure : public std::exception
 {
 public:
-	init_failure(std::string message = std::string()) throw();
+	explicit init_failure(std::string message = std::string()) throw();
 	init_failure(const init_failure& other) throw();
 	~init_failure() throw();
 	const char * what() const throw();
 	init_failure& operator=(const init_failure& other) throw();
+	friend Debug& operator<<(Debug& dbg, const init_failure& );
 private:
 	std::string message;
 };
+
+Debug& operator<<(Debug& dbg, const init_failure& i);
+
 #endif

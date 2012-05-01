@@ -20,6 +20,9 @@
 #ifndef GPS_H_
 #define GPS_H_
 
+/* STL Headers */
+#include <string>
+
 /* Boost Headers */
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
@@ -71,6 +74,8 @@ public:
 	/// signal when gps measurement is updated
 	boost::signals2::signal<void ()> gps_updated;
 
+	inline void terminate() {boost::mutex::scoped_lock(_terminate_lock); _terminate = true;}
+
 private:
 
 	/// default constructor
@@ -82,6 +87,16 @@ private:
 
 	/// thread used to communicate with the GPS
 	boost::thread read_serial_thread;
+
+	/// path to serial device connected to novatel
+	static const std::string serial_port;
+
+	/// store whether to terminate the thread
+	bool _terminate;
+	/// serialize access to _terminate
+	boost::mutex _terminate_lock;
+	/// test whether the thread should terminate
+	inline bool check_terminate() {boost::mutex::scoped_lock(_terminate_lock); return _terminate;}
 
 	/// container for llh_position
 	blas::vector<double> llh_position;
