@@ -57,7 +57,8 @@ void GPS::read_serial::operator()()
 		warning() << "" << i;
 
 	}
-	send_log_command();
+	boost::this_thread::sleep(boost::posix_time::seconds(1));
+//	send_log_command();
 	readPort();
 	debug() << "Novatel receive thread terminated, sending unlog command.";
 	send_unlog_command();
@@ -67,40 +68,41 @@ void GPS::read_serial::initPort()
 {
 
 	fd_ser = open(serial_port.c_str(), O_RDWR);
-	  if(fd_ser == -1)
-		  throw init_failure("Unable to open novatel port: " + serial_port);
 
-	  struct termios port_config;
+	if(fd_ser == -1)
+		throw init_failure("Unable to open novatel port: " + serial_port);
 
-	  tcgetattr(fd_ser, &port_config);                  // get the current port settings
-	  cfmakeraw(&port_config);							// set RAW mode
-	  cfsetospeed(&port_config, B38400);
-	  cfsetispeed(&port_config, B38400);
-	  port_config.c_cflag |= (CLOCAL | CREAD);          // Enable the receiver and set local mode...
-	  port_config.c_cflag &= ~(CSIZE);                  // Set terminal data length.
-	  port_config.c_cflag |=  CS8;                      // 8 data bits
-	  port_config.c_cflag &= ~(CSTOPB);                 // clear for one stop bit
-	  port_config.c_cflag &= ~(PARENB | PARODD);        // Set terminal parity.
-	  // Clear terminal output flow control.
-	  port_config.c_iflag &= ~(IXON | IXOFF);           // set -isflow  & -osflow
-	  port_config.c_cflag &= ~(IHFLOW | OHFLOW);        // set -ihflow  & -ohflow
-	  tcflow (fd_ser, TCION);                           // set -ispaged
-	  tcflow (fd_ser, TCOON);                           // set -ospaged
-	  tcflow (fd_ser, TCIONHW);                         // set -ihpaged
-	  tcflow (fd_ser, TCOONHW);                         // set -ohpaged
+	struct termios port_config;
+
+	tcgetattr(fd_ser, &port_config);                  // get the current port settings
+	cfmakeraw(&port_config);							// set RAW mode
+	cfsetospeed(&port_config, B38400);
+	cfsetispeed(&port_config, B38400);
+	port_config.c_cflag |= (CLOCAL | CREAD);          // Enable the receiver and set local mode...
+	port_config.c_cflag &= ~(CSIZE);                  // Set terminal data length.
+	port_config.c_cflag |=  CS8;                      // 8 data bits
+	port_config.c_cflag &= ~(CSTOPB);                 // clear for one stop bit
+	port_config.c_cflag &= ~(PARENB | PARODD);        // Set terminal parity.
+	// Clear terminal output flow control.
+	port_config.c_iflag &= ~(IXON | IXOFF);           // set -isflow  & -osflow
+	port_config.c_cflag &= ~(IHFLOW | OHFLOW);        // set -ihflow  & -ohflow
+	tcflow (fd_ser, TCION);                           // set -ispaged
+	tcflow (fd_ser, TCOON);                           // set -ospaged
+	tcflow (fd_ser, TCIONHW);                         // set -ihpaged
+	tcflow (fd_ser, TCOONHW);                         // set -ohpaged
 
 
-	  if (cfsetospeed(&port_config, B38400) != 0)
-	    critical() << "could not set output speed";
-	  if (cfsetispeed(&port_config, B38400) != 0)
-	    critical() << "could not set input speed";
-	  if (tcsetattr(fd_ser, TCSADRAIN, &port_config) != 0)
-	    critical() << "could not set serial port attributes";
-	  tcgetattr(fd_ser, &port_config);
-	  tcflush(fd_ser, TCIOFLUSH);
+	if (cfsetospeed(&port_config, B38400) != 0)
+		critical() << "could not set output speed";
+	if (cfsetispeed(&port_config, B38400) != 0)
+		critical() << "could not set input speed";
+	if (tcsetattr(fd_ser, TCSADRAIN, &port_config) != 0)
+		critical() << "could not set serial port attributes";
+	tcgetattr(fd_ser, &port_config);
+	tcflush(fd_ser, TCIOFLUSH);
 
-	  //debug() << port << " initialized";
-	  //debug() << "Binary Header: " << oem4_binary_header(32, 1);
+	//debug() << port << " initialized";
+	//debug() << "Binary Header: " << oem4_binary_header(32, 1);
 }
 
 
@@ -116,19 +118,26 @@ void GPS::read_serial::readPort()
 
 	last_data = boost::posix_time::second_clock::local_time();
 
+//	send_test_message();
+	send_log_command();
 	while(!GPS::getInstance()->check_terminate())
 	{
-		if ((boost::posix_time::second_clock::local_time() - last_data).total_seconds() > 5)
+		if ((boost::posix_time::second_clock::local_time() - last_data).total_seconds() > 10)
 		{
 			warning() << "Stopped receiving data from Novatel.  Attempting to restart communication.";
+			last_data = boost::posix_time::second_clock::local_time();
 			send_unlog_command();
 			boost::this_thread::sleep(boost::posix_time::milliseconds(100));
 			send_log_command();
 		}
 
 		int bytes = readcond(fd_ser, &sync_byte, 1, 1, 10, 10);
+//		debug() << "reading from fd_ser = " << fd_ser;
 		if (bytes < 1)
+		{
+//			debug() << "timed out waiting for first sync byte";
 			continue;
+		}
 		else if (sync_byte == 0xAA)
 		{
 			// got first sync byte
@@ -152,6 +161,8 @@ void GPS::read_serial::readPort()
 				continue;
 			}
 
+//			debug() << "Header: " << header;
+
 			int data_size = raw_to_int<uint16_t>(header.begin() + 5);
 			std::vector<uint8_t> log_data(data_size);
 			bytes = readcond(fd_ser, &log_data[0], data_size, data_size, 10, 10);
@@ -160,6 +171,7 @@ void GPS::read_serial::readPort()
 				warning() << "Novatel: Received header, but could not receive data log.";
 				continue;
 			}
+//			debug() << "Message: " << log_data;
 
 			int checksum_size = 4;
 			std::vector<uint8_t> checksum(checksum_size);
@@ -175,18 +187,23 @@ void GPS::read_serial::readPort()
 			whole_message.insert(whole_message.end(), header.begin(), header.end());
 			whole_message.insert(whole_message.end(), log_data.begin(), log_data.end());
 
-			if (checksum != compute_checksum(whole_message))
+			std::vector<uint8_t> computed_checksum(compute_checksum(whole_message));
+//			debug() << "Received checksum: " << std::hex << checksum;
+			if (checksum != computed_checksum)
 			{
 				warning() << "Novatel: received complete message but checksum was invalid";
+				debug() << "Novatel checksum: " << checksum << ", computed checksum: " << computed_checksum;
 				continue;
 			}
 
 			uint16_t message_id = raw_to_int<uint16_t>(header.begin() + 1);
-
+			if (is_response(header))
+			{
+				debug() << "Novatel response message: " << std::string(log_data.begin() + 4, log_data.end());
+			}
 			switch (message_id)
 			{
-			case 244:  // RTKXYZ
-			{
+			case 1: // log command (response)
 				if (is_response(header))
 				{
 					switch(parse_enum(log_data))
@@ -197,10 +214,15 @@ void GPS::read_serial::readPort()
 					case OEM4_CRC_MISMATCH:
 						warning() << "Novatel reports checksum failure";
 						break;
+					default:
+						warning() << "Received error response to RTKXYZ";
 					}
 				}
-				else
+			case 244:  // RTKXYZ
+			{
+				if (!is_response(header))
 				{
+					debug() << "Received data from novatel";
 					std::vector<double> log;
 					parse_header(header, log);
 					parse_log(log_data, log);
@@ -210,7 +232,8 @@ void GPS::read_serial::readPort()
 			}
 			default:
 			{
-				warning() << "Received unexpected message from Novatel with id: " << message_id;
+				warning() << "Received unexpected " << "message from Novatel with id: " << message_id;
+
 				continue;
 			}
 			}
@@ -255,10 +278,14 @@ void GPS::read_serial::parse_log(const std::vector<uint8_t>& data, std::vector<d
 	log += pos_type;
 	gps.set_position_type(pos_type);
 
+	debug() << "Pos type: " << pos_type;
+
 	blas::vector<double> position(parse_3floats<double>(data, 8));
 	log.insert(log.end(), position.begin(), position.end());
 	blas::vector<double> llh(ecef_to_llh(position));
 	gps.set_llh_position(llh);
+
+	debug() << "llh: " << llh;
 
 	blas::vector<float> position_error(parse_3floats<float>(data, 32));
 	log.insert(log.end(), position_error.begin(), position_error.end());
@@ -329,14 +356,13 @@ blas::vector<double> GPS::read_serial::ecef_to_llh(const blas::vector<double>& e
 	return llh;
 }
 
-
-
-
 void GPS::read_serial::send_unlog_command()
 {
 	std::vector<uint8_t> command(generate_header(38, 8));
+
 	command.insert(command.end(), 8, 0);
 	std::vector<uint8_t> checksum(compute_checksum(command));
+//	debug() << "unlog checksum" << std::hex << checksum;
 	command.insert(command.end(), checksum.begin(), checksum.end());
 	write(fd_ser, &command[0], command.size());
 }
@@ -345,9 +371,13 @@ std::vector<uint8_t> GPS::read_serial::generate_header(uint16_t message_id, uint
 {
 	std::vector<uint8_t> header;
 	header += 0xAA, 0x44, 0x12, 0x00;
+	std::vector<uint8_t> id(int_to_raw(message_id));
+	header.insert(header.end(), id.begin(), id.end());
+	header += 0x00, 192;
+
 	std::vector<uint8_t> length(int_to_raw(message_length));
 	header.insert(header.end(), length.begin(), length.end());
-	header += 0x00, 192, message_length;
+
 	header.insert(header.end(), 18, 0);
 	header[3] = header.size();
 	return header;
@@ -355,8 +385,10 @@ std::vector<uint8_t> GPS::read_serial::generate_header(uint16_t message_id, uint
 
 void GPS::read_serial::send_log_command()
 {
-	std::vector<uint8_t> command(generate_header(244, 32));
-	std::vector<uint8_t> port(int_to_raw(6));
+	std::vector<uint8_t> command(generate_header(1, 32));
+	debug() << "log header: " << std::hex <<  command;
+
+	std::vector<uint8_t> port(int_to_raw(192));
 	command.insert(command.end(), port.begin(), port.end());
 	std::vector<uint8_t> id(int_to_raw(static_cast<uint16_t>(244)));
 	command.insert(command.end(), id.begin(), id.end());
@@ -365,13 +397,22 @@ void GPS::read_serial::send_log_command()
 	command.insert(command.end(), trigger.begin(), trigger.end());
 	std::vector<uint8_t> period(float_to_raw(0.25));
 	command.insert(command.end(), period.begin(), period.end());
-	command.insert(command.end(), 12, 0);
+	std::vector<uint8_t> offset(float_to_raw(0.0));
+	command.insert(command.end(), offset.begin(), offset.end());
+	command.insert(command.end(), 4, 0);
+
+	debug() << "log parameters: " << std::hex << std::vector<uint8_t>(command.begin() + 28, command.end());
 
 	std::vector<uint8_t> checksum(compute_checksum(command));
 	command.insert(command.end(), checksum.begin(), checksum.end());
 
+	debug() << "log checksum: " << std::hex << checksum;
+
+//	debug() << "log checksum: " << std::hex << checksum;
+
 	/* Send out the command */
 	write(fd_ser, &command[0], command.size());
+//	debug() << "Sent log command to fd_ser = " << fd_ser;
 }
 
 std::vector<uint8_t> GPS::read_serial::compute_checksum(const std::vector<uint8_t>& message)
@@ -386,7 +427,7 @@ std::vector<uint8_t> GPS::read_serial::compute_checksum(const std::vector<uint8_
 		ulTemp2 = CRC32Value( ((int) ulCRC ^ message[i] ) & 0xff );
 		ulCRC = ulTemp1 ^ ulTemp2;
 	}
-
+//	debug() << "integer checksum: " << ulCRC;
 	return(int_to_raw(ulCRC));
 }
 
@@ -394,6 +435,7 @@ unsigned long GPS::read_serial::CRC32Value(int i)
 {
 	int j;
 	unsigned long ulCRC;
+
 	ulCRC = i;
 	for ( j = 8 ; j > 0; j-- )
 	{
