@@ -55,7 +55,7 @@ void GPS::read_serial::operator()()
 	catch(init_failure& i)
 	{
 		warning() << "" << i;
-
+		MainApp::terminate();
 	}
 	boost::this_thread::sleep(boost::posix_time::seconds(1));
 //	send_log_command();
