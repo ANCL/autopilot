@@ -222,11 +222,12 @@ void GPS::read_serial::readPort()
 			{
 				if (!is_response(header))
 				{
-					debug() << "Received data from novatel";
+//					debug() << "Received data from novatel";
 					std::vector<double> log;
 					parse_header(header, log);
 					parse_log(log_data, log);
 					last_data = boost::posix_time::second_clock::local_time();
+					GPS::getInstance()->gps_updated();
 				}
 				break;
 			}
@@ -278,14 +279,14 @@ void GPS::read_serial::parse_log(const std::vector<uint8_t>& data, std::vector<d
 	log += pos_type;
 	gps.set_position_type(pos_type);
 
-	debug() << "Pos type: " << pos_type;
+//	debug() << "Pos type: " << pos_type;
 
 	blas::vector<double> position(parse_3floats<double>(data, 8));
 	log.insert(log.end(), position.begin(), position.end());
 	blas::vector<double> llh(ecef_to_llh(position));
 	gps.set_llh_position(llh);
 
-	debug() << "llh: " << llh;
+//	debug() << "llh: " << llh;
 
 	blas::vector<float> position_error(parse_3floats<float>(data, 32));
 	log.insert(log.end(), position_error.begin(), position_error.end());
@@ -386,7 +387,7 @@ std::vector<uint8_t> GPS::read_serial::generate_header(uint16_t message_id, uint
 void GPS::read_serial::send_log_command()
 {
 	std::vector<uint8_t> command(generate_header(1, 32));
-	debug() << "log header: " << std::hex <<  command;
+//	debug() << "log header: " << std::hex <<  command;
 
 	std::vector<uint8_t> port(int_to_raw(192));
 	command.insert(command.end(), port.begin(), port.end());
@@ -401,12 +402,12 @@ void GPS::read_serial::send_log_command()
 	command.insert(command.end(), offset.begin(), offset.end());
 	command.insert(command.end(), 4, 0);
 
-	debug() << "log parameters: " << std::hex << std::vector<uint8_t>(command.begin() + 28, command.end());
+//	debug() << "log parameters: " << std::hex << std::vector<uint8_t>(command.begin() + 28, command.end());
 
 	std::vector<uint8_t> checksum(compute_checksum(command));
 	command.insert(command.end(), checksum.begin(), checksum.end());
 
-	debug() << "log checksum: " << std::hex << checksum;
+//	debug() << "log checksum: " << std::hex << checksum;
 
 //	debug() << "log checksum: " << std::hex << checksum;
 

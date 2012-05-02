@@ -29,7 +29,8 @@
 /**
  * Class to send commands to 3DM-GX3
  * @author Bryan Godbolt <godbolt@ece.ualberta.ca>
- * @date February 3, 2012
+ * @date February 3, 2012: Class creation
+ * @date May 2, 2012: Added novatel external measurement
  */
 class IMU::send_serial
 {
@@ -55,9 +56,21 @@ private:
 	void reset_filter();
 	/// set the initial filter attitude from the AHRS
 	void init_filter();
+	/// update the gx3 with the novatel measurement
+	void external_gps_update();
 
 	template <typename floating_type>
 	static std::vector<uint8_t> float_to_raw(const floating_type f);
+
+	template <typename IntegerType>
+	static std::vector<uint8_t> int_to_raw(const IntegerType i)
+
+	/// append the raw version of f onto message
+	template <typename floating_type>
+	static void pack_float(const floating_type f, std::vector<uint8_t>& message);
+
+	template<typename Integertype>
+	static void pack_int(const IntegerType i, std::vector<uint8_t>& message);
 
 	/// serialize messages being sent to imu.  any thread intending to write data to the serial port should lock this mutex
 	mutable boost::mutex send_lock;
@@ -70,6 +83,8 @@ private:
 	boost::signals2::scoped_connection reset_connection;
 	/// connection for QGCLink::init_filter
 	boost::signals2::scoped_connection init_filter_connection;
+	/// connection to update gps measurement
+	boost::signals2::scoped_connection gps_update_connection;
 };
 
 template<typename Callable>
@@ -86,6 +101,32 @@ std::vector<uint8_t> IMU::send_serial::float_to_raw(const floating_type f)
 	for (int i = sizeof(floating_type) - 1; i >= 0; i--)
 		result.push_back(byte[i]);
 	return result;
+}
+
+template <typename IntegerType>
+std::vector<uint8_t> IMU::send_serial::int_to_raw(const IntegerType i)
+{
+	std::vector<uint8_t> result;
+	const uint8_t* byte = reinterpret_cast<const uint8_t*>(&i);
+	for (uint_t i= sizeof(IntegerType) - 1; i>= 0; i--)
+	{
+		result.push_back(byte[i]);
+	}
+	return result;
+}
+
+template<typename floating_type>
+void IMU::send_serial::pack_float(const floating_type f, std::vector<uint8_t>& message)
+{
+	std::vector<uint8_t> raw(float_to_raw(f));
+	message.insert(message.end(), raw.begin(), raw.end());
+}
+
+template<typename Integertype>
+void IMU::send_serial::pack_int(const IntegerType i, std::vector<uint8_t>& message)
+{
+	std::vector<uint8_t> raw(int_to_raw(i));
+	message.insert(message.end(), raw.begin(), raw,end());
 }
 
 #endif

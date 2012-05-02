@@ -23,6 +23,8 @@
 #include "Debug.h"
 #include "ack_handler.h"
 #include "QGCLink.h"
+#include "GPS.h"
+#include "gps_time.h"
 
 /* Boost Headers */
 #include <boost/bind.hpp>
@@ -39,7 +41,10 @@ IMU::send_serial::send_serial()
 				this, boost::function<void ()>(boost::bind(&IMU::send_serial::reset_filter, this))))),
   init_filter_connection(QGCLink::getInstance()->init_filter.connect(
 		  boost::bind(&IMU::send_serial::start_send_thread<boost::function<void ()> >,
-				  this, boost::function<void ()>(boost::bind(&IMU::send_serial::init_filter, this)))))
+				  this, boost::function<void ()>(boost::bind(&IMU::send_serial::init_filter, this))))),
+  gps_update_connection(GPS::getInstance()->gps_updated.connect(
+		  boost::bind(&IMU::send_serial::start_send_thread<boost::function<void ()> >,
+				  this, boost::function<void ()>(boost::bind(&IMU::send_serial::external_gps_update, this)))))
 {
 	boost::thread t(boost::bind(&IMU::send_serial::init_imu, this));
 }
@@ -322,4 +327,49 @@ void IMU::send_serial::init_filter()
 		message() << "Successfully sent Set Initial Attitude from AHRS";
 	else
 		message() << "Error sending Set Initial Attitude from AHRS with error code: " << static_cast<int>(init_ack.get_error_code());
+}
+
+void IMU::send_serial::external_gps_update()
+{
+	// get gps data
+	GPS* gps = GPS::getInstance();
+	blas::vector<double> llh(gps->get_llh_position());
+	blas::vector<float> vel(gps->get_ned_velocity());
+	blas::vector<float> pos_error(gps->get_pos_sigma());
+	blas::vector<float> vel_error(gps->get_vel_sigma());
+	gps_time time(gps->get_gps_time());
+
+	// create message
+	std::vector<uint8_t> gps_update;
+	gps_update += 0x75, 0x65, 0x0d, 48, 48, 16;
+
+	pack_float(time.get_seconds(), gps_update);
+	pack_int(time.get_week(), gps_update);
+
+	for (int i=0; i<3; i++)
+		pack_float(llh[i], gps_update);
+
+	for (int i=0; i<3; i++)
+		pack_float(vel[i], gps_update);
+
+	for (int i=0; i<3; i++)
+		pack_float(pos_error[i], gps_update);
+
+	for (int i=0; i<3; i++)
+		pack_float(vel_error[i], gps_update);
+
+	std::vector<uint8_t> checksum = compute_checksum(gps_update);
+	gps_update.insert(gps_update.end(), gps_update.begin(), gps_update.end());
+
+	ack_handler gps_update_ack(0x16);
+
+	send_lock.lock();
+	write(IMU::getInstance()->fd_ser, &gps_update[0], gps_update.size());
+	send_lock.unlock();
+
+	gps_update_ack.wait_for_ack();
+	if (gps_update_ack.get_error_code() == 0x00)
+		debug() << "Successfully updated gx3 with external gps measurement.";
+	else
+		message() << "Error sending External GPS Update with code: " << static_cast<int>(gps_update_ack.get_error_code());
 }
