@@ -142,6 +142,7 @@ blas::vector<FloatingType> GPS::read_serial::parse_3floats(const std::vector<uin
 template<typename FloatingType>
 blas::vector<FloatingType> GPS::read_serial::ecef_to_ned(const blas::vector<FloatingType>& ecef, const blas::vector<double>& llh)
 {
+
 	blas::matrix<double> ned_rotation(3,3);
 	ned_rotation(0,0) = -sin(llh[0])*cos(llh[1]);
 	ned_rotation(0,1) = -sin(llh[0])*sin(llh[1]);

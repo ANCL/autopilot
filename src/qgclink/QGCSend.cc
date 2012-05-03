@@ -274,6 +274,7 @@ void QGCLink::QGCSend::send_position(std::queue<std::vector<uint8_t> > *sendq)
 		GPS* gps = GPS::getInstance();
 
 		blas::vector<double> _pos_error(gps->get_pos_sigma());
+//		debug() << "sent pos error:" << _pos_error;
 		std::vector<float> pos_error(_pos_error.begin(), _pos_error.end());
 
 		blas::vector<double> _vel_error(gps->get_vel_sigma());

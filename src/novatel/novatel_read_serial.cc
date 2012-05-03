@@ -282,6 +282,7 @@ void GPS::read_serial::parse_log(const std::vector<uint8_t>& data, std::vector<d
 //	debug() << "Pos type: " << pos_type;
 
 	blas::vector<double> position(parse_3floats<double>(data, 8));
+//	debug() << "ecef position: " << position;
 	log.insert(log.end(), position.begin(), position.end());
 	blas::vector<double> llh(ecef_to_llh(position));
 	gps.set_llh_position(llh);
