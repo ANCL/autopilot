@@ -205,6 +205,11 @@ void IMU::send_serial::set_filter_parameters()
 	heading += 0x04, 0x18, 0x01, 0x01;
 	ack_handler heading_ack(0x18);
 
+	// gps source control
+	std::vector<uint8_t> gps;
+	gps += 0x04, 0x15, 1, 2;
+	ack_handler gps_ack(0x15);
+
 	// auto initialization
 	std::vector<uint8_t> init;
 	init += 0x04, 0x19, 0x01, 0x00;
@@ -219,6 +224,7 @@ void IMU::send_serial::set_filter_parameters()
 	nav_params.insert(nav_params.end(), vehicle.begin(), vehicle.end());
 	nav_params.insert(nav_params.end(), antenna.begin(), antenna.end());
 	nav_params.insert(nav_params.end(), heading.begin(), heading.end());
+	nav_params.insert(nav_params.end(), gps.begin(), gps.end());
 	nav_params.insert(nav_params.end(), init.begin(), init.end());
 
 	// get final size
@@ -268,6 +274,16 @@ void IMU::send_serial::set_filter_parameters()
 	else
 	{
 		std::string message = "Error setting antenna offset";
+		::message() << message;
+		IMU::getInstance()->gx3_status_message(message);
+	}
+
+	gps_ack.wait_for_ack();
+	if (gps_ack.get_error_code() == 0x00)
+		message() << "Successfully set gps source";
+	else
+	{
+		std::string message = "Error setting gps source";
 		::message() << message;
 		IMU::getInstance()->gx3_status_message(message);
 	}
@@ -331,45 +347,48 @@ void IMU::send_serial::init_filter()
 
 void IMU::send_serial::external_gps_update()
 {
-	// get gps data
-	GPS* gps = GPS::getInstance();
-	blas::vector<double> llh(gps->get_llh_position());
-	blas::vector<float> vel(gps->get_ned_velocity());
-	blas::vector<float> pos_error(gps->get_pos_sigma());
-	blas::vector<float> vel_error(gps->get_vel_sigma());
-	gps_time time(gps->get_gps_time());
+	if (IMU::getInstance()->get_gx3_mode() == IMU::RUNNING)
+	{
+		// get gps data
+		GPS* gps = GPS::getInstance();
+		blas::vector<double> llh(gps->get_llh_position());
+		blas::vector<float> vel(gps->get_ned_velocity());
+		blas::vector<float> pos_error(gps->get_pos_sigma());
+		blas::vector<float> vel_error(gps->get_vel_sigma());
+		gps_time time(gps->get_gps_time());
 
-	// create message
-	std::vector<uint8_t> gps_update;
-	gps_update += 0x75, 0x65, 0x0d, 48, 48, 16;
+		// create message
+		std::vector<uint8_t> gps_update;
+		gps_update += 0x75, 0x65, 0x0d, 48, 48, 16;
 
-	pack_float(time.get_seconds(), gps_update);
-	pack_int(time.get_week(), gps_update);
+		pack_float(time.get_seconds(), gps_update);
+		pack_int(time.get_week(), gps_update);
 
-	for (int i=0; i<3; i++)
-		pack_float(llh[i], gps_update);
+		for (int i=0; i<3; i++)
+			pack_float(llh[i], gps_update);
 
-	for (int i=0; i<3; i++)
-		pack_float(vel[i], gps_update);
+		for (int i=0; i<3; i++)
+			pack_float(vel[i], gps_update);
 
-	for (int i=0; i<3; i++)
-		pack_float(pos_error[i], gps_update);
+		for (int i=0; i<3; i++)
+			pack_float(pos_error[i], gps_update);
 
-	for (int i=0; i<3; i++)
-		pack_float(vel_error[i], gps_update);
+		for (int i=0; i<3; i++)
+			pack_float(vel_error[i], gps_update);
 
-	std::vector<uint8_t> checksum = compute_checksum(gps_update);
-	gps_update.insert(gps_update.end(), gps_update.begin(), gps_update.end());
+		std::vector<uint8_t> checksum = compute_checksum(gps_update);
+		gps_update.insert(gps_update.end(), gps_update.begin(), gps_update.end());
 
-	ack_handler gps_update_ack(0x16);
+		ack_handler gps_update_ack(0x16);
 
-	send_lock.lock();
-	write(IMU::getInstance()->fd_ser, &gps_update[0], gps_update.size());
-	send_lock.unlock();
+		send_lock.lock();
+		write(IMU::getInstance()->fd_ser, &gps_update[0], gps_update.size());
+		send_lock.unlock();
 
-	gps_update_ack.wait_for_ack();
-	if (gps_update_ack.get_error_code() == 0x00)
-		debug() << "Successfully updated gx3 with external gps measurement.";
-	else
-		message() << "Error sending External GPS Update with code: " << static_cast<int>(gps_update_ack.get_error_code());
+		gps_update_ack.wait_for_ack();
+		if (gps_update_ack.get_error_code() == 0x00)
+			debug() << "Successfully updated gx3 with external gps measurement.";
+		else
+			message() << "Error sending External GPS Update with code: " << static_cast<int>(gps_update_ack.get_error_code());
+	}
 }

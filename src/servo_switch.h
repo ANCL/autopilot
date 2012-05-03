@@ -50,12 +50,15 @@
 
 /**
  * @brief Contains hardware specific code for Microbotics Servo Switch.
- * @author Bryan Godbolt <godbolt@ualberta.ca>
+ * @author Bryan Godbolt <godbolt@ece.ualberta.ca>
+ * @author Nikos Vitzilaios <nvitzilaios@ualberta.ca>
  *
  * This class runs two threads.  One to send data on the serial port (/dev/ser3) and one to receive data.
  * The sending thread runs at 50 Hz and is used to transmit the new pulse widths commanded by the control.
  * The receive thread is used to get the current pilot inputs and the status message which indicates the state of the
  * control channel (pilot manual or pilot auto).
+ * @date February 2012: Class creation
+ * @date May 1, 2012: Added auxiliary input for engine speed
  */
 class servo_switch
 {
@@ -100,6 +103,12 @@ public:
 	/// signal with new mode as argument
 	boost::signals2::signal<void (heli::PILOT_MODE)> pilot_mode_changed;
 	inline heli::PILOT_MODE get_pilot_mode() {boost::mutex::scoped_lock lock(pilot_mode_lock); return pilot_mode;}
+
+	inline double get_engine_speed() const {boost::mutex::scoped_lock(engine_speed_lock); return engine_speed;}
+	inline double get_engine_rpm() const {return get_engine_speed()*60;}
+	inline double get_main_rotor_speed() const {return get_engine_speed()/7.5;}
+	inline double get_main_rotor_rpm() const {return get_engine_rpm()/7.5;}
+
 private:
 	servo_switch();
 	static servo_switch* _instance;
@@ -131,6 +140,10 @@ private:
 	boost::mutex pilot_mode_lock;
 	void set_pilot_mode(heli::PILOT_MODE mode);
 	static std::string pilot_mode_string(heli::PILOT_MODE mode);
+
+	double engine_speed;
+	boost::mutex engine_speed_lock;
+	inline void set_engine_speed(double speed) {boost::mutex::scoped_lock(engine_speed_lock); engine_speed = speed;}
 };
 
 #endif

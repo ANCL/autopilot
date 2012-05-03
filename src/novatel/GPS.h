@@ -71,6 +71,16 @@ public:
 	/// threadsafe get gps time
 	inline gps_time get_gps_time() const {boost::mutex::scoped_lock(_gps_time_lock); return _gps_time;}
 
+	inline uint get_position_type() const {boost::mutex::scoped_lock(position_type_lock); return position_type;}
+
+	inline uint get_position_status() const {boost::mutex::scoped_lock(position_status_lock); return position_status;}
+
+	inline uint get_velocity_type() const {boost::mutex::scoped_lock(velocity_type_lock); return velocity_type;}
+
+	inline uint get_velocity_status() const {boost::mutex::scoped_lock(velocity_status_lock); return velocity_status;}
+
+	inline uint8_t get_num_sats() const {boost::mutex::scoped_lock(num_sats_lock); return num_sats;}
+
 	/// signal when gps measurement is updated
 	boost::signals2::signal<void ()> gps_updated;
 

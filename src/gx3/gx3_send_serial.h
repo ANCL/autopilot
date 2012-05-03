@@ -63,13 +63,13 @@ private:
 	static std::vector<uint8_t> float_to_raw(const floating_type f);
 
 	template <typename IntegerType>
-	static std::vector<uint8_t> int_to_raw(const IntegerType i)
+	static std::vector<uint8_t> int_to_raw(const IntegerType i);
 
 	/// append the raw version of f onto message
 	template <typename floating_type>
 	static void pack_float(const floating_type f, std::vector<uint8_t>& message);
 
-	template<typename Integertype>
+	template<typename IntegerType>
 	static void pack_int(const IntegerType i, std::vector<uint8_t>& message);
 
 	/// serialize messages being sent to imu.  any thread intending to write data to the serial port should lock this mutex
@@ -122,11 +122,11 @@ void IMU::send_serial::pack_float(const floating_type f, std::vector<uint8_t>& m
 	message.insert(message.end(), raw.begin(), raw.end());
 }
 
-template<typename Integertype>
+template<typename IntegerType>
 void IMU::send_serial::pack_int(const IntegerType i, std::vector<uint8_t>& message)
 {
 	std::vector<uint8_t> raw(int_to_raw(i));
-	message.insert(message.end(), raw.begin(), raw,end());
+	message.insert(message.end(), raw.begin(), raw.end());
 }
 
 #endif

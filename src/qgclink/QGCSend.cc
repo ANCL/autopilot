@@ -24,6 +24,7 @@
 #include "Control.h"
 #include "MainApp.h"
 #include "IMU.h"
+#include "GPS.h"
 
 /* MAVLink Headers */
 #include <mavlink.h>
@@ -241,30 +242,54 @@ void QGCLink::QGCSend::send()
 
 void QGCLink::QGCSend::send_position(std::queue<std::vector<uint8_t> > *sendq)
 {
-	IMU* imu = IMU::getInstance();
+	{
+		IMU* imu = IMU::getInstance();
 
-	// get llh pos
-	blas::vector<double> _llh_pos(imu->get_llh_position());
-	std::vector<float> llh_pos(_llh_pos.begin(), _llh_pos.end());
-	// get ned pos
-	blas::vector<double> _ned_pos(imu->get_ned_position());
-	std::vector<float> ned_pos(_ned_pos.begin(), _ned_pos.end());
-	// get ned vel
-	blas::vector<double> _ned_vel(imu->get_velocity());
-	std::vector<float> ned_vel(_ned_vel.begin(), _ned_vel.end());
-	// get ned origin
-	blas::vector<double> _ned_origin(imu->get_llh_origin());
-	std::vector<float> ned_origin(_ned_origin.begin(), _ned_origin.end());
+		// get llh pos
+		blas::vector<double> _llh_pos(imu->get_llh_position());
+		std::vector<float> llh_pos(_llh_pos.begin(), _llh_pos.end());
+		// get ned pos
+		blas::vector<double> _ned_pos(imu->get_ned_position());
+		std::vector<float> ned_pos(_ned_pos.begin(), _ned_pos.end());
+		// get ned vel
+		blas::vector<double> _ned_vel(imu->get_velocity());
+		std::vector<float> ned_vel(_ned_vel.begin(), _ned_vel.end());
+		// get ned origin
+		blas::vector<double> _ned_origin(imu->get_llh_origin());
+		std::vector<float> ned_origin(_ned_origin.begin(), _ned_origin.end());
 
-	mavlink_message_t msg;
-	std::vector<uint8_t> buf(MAVLINK_MAX_PACKET_LEN);
+		mavlink_message_t msg;
+		std::vector<uint8_t> buf(MAVLINK_MAX_PACKET_LEN);
 
-	mavlink_msg_ualberta_position_pack(qgc->uasId, heli::GX3_ID, &msg,
-			&llh_pos[0], &ned_pos[0], &ned_vel[0], &ned_origin[0],
-			(boost::posix_time::microsec_clock::local_time() - startTime).total_milliseconds());
+		mavlink_msg_ualberta_position_pack(qgc->uasId, heli::GX3_ID, &msg,
+				&llh_pos[0], &ned_pos[0], &ned_vel[0], &ned_origin[0],
+				(boost::posix_time::microsec_clock::local_time() - startTime).total_milliseconds());
 
-	buf.resize(mavlink_msg_to_send_buffer(&buf[0], &msg));
-	sendq->push(buf);
+		buf.resize(mavlink_msg_to_send_buffer(&buf[0], &msg));
+		sendq->push(buf);
+	}
+
+	{
+
+		GPS* gps = GPS::getInstance();
+
+		blas::vector<double> _pos_error(gps->get_pos_sigma());
+		std::vector<float> pos_error(_pos_error.begin(), _pos_error.end());
+
+		blas::vector<double> _vel_error(gps->get_vel_sigma());
+		std::vector<float> vel_error(_vel_error.begin(), _vel_error.end());
+
+		mavlink_message_t msg;
+		std::vector<uint8_t> buf(MAVLINK_MAX_PACKET_LEN);
+
+		mavlink_msg_novatel_gps_raw_pack(qgc->uasId, heli::NOVATEL_ID, &msg,
+								       gps->get_position_type(), gps->get_position_status(),
+								       gps->get_num_sats(), &pos_error[0],
+								       gps->get_velocity_type(), &vel_error[0],
+								       (boost::posix_time::microsec_clock::local_time() - startTime).total_milliseconds());
+		buf.resize(mavlink_msg_to_send_buffer(&buf[0], &msg));
+		sendq->push(buf);
+	}
 }
 
 void QGCLink::QGCSend::send_param(std::queue<std::vector<uint8_t> > *sendq)
@@ -508,8 +533,9 @@ void QGCLink::QGCSend::send_status(std::queue<std::vector<uint8_t> >* sendq)
 	std::vector<uint8_t> buf(MAVLINK_MAX_PACKET_LEN);
 
 	mavlink_msg_ualberta_sys_status_pack(qgc->uasId, 200, &msg,
-			qgc_servo_source, qgc_filter_state, qgc_pilot_mode, qgc_control_mode,
-			(get_attitude_source()?UALBERTA_NAV_FILTER:UALBERTA_AHRS));
+			qgc_servo_source, qgc_filter_state, qgc_pilot_mode, qgc_control_mode,(get_attitude_source()?UALBERTA_NAV_FILTER:UALBERTA_AHRS),
+			servo_switch::getInstance()->get_engine_rpm(), servo_switch::getInstance()->get_main_rotor_rpm(), 0, 0);
+
 	buf.resize(mavlink_msg_to_send_buffer(&buf[0], &msg));
 
 	sendq->push(buf);
