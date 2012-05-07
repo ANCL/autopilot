@@ -221,7 +221,7 @@ void servo_switch::read_serial::parse_aux_inputs(const std::vector<uint8_t>& pay
 	std::bitset<8> meas_byte (payload[2]);
 	if(meas_byte.test(7))
 	{
-		warning() << "Time measurement over range";
+		debug() << "Time measurement over range";
 		return ;
 	}
 	if(!meas_byte.test(6))
@@ -235,11 +235,18 @@ void servo_switch::read_serial::parse_aux_inputs(const std::vector<uint8_t>& pay
 	uint16_t time_measurement;
 	time_measurement = (static_cast<uint16_t>(meas_byte.to_ulong()) << 8) + payload[3];
 
-	double speed;
-	servo_switch::getInstance()->set_engine_speed(speed = 1 / (time_measurement*32.0*0.000001));
+	double speed = 1 / (time_measurement*32.0*0.000001);
+	std::vector<double> speeds;
+	speeds.push_back(speed);
+	servo_switch& ss = *servo_switch::getInstance();
+	if (speed < 15000.0/60.0)
+	{
+		ss.set_engine_speed(speed);
+	}
+	speeds.push_back(ss.get_engine_speed());
 
 	LogFile *log = LogFile::getInstance();
-	log->logData(heli::LOG_INPUT_RPM, std::vector<double>(1, speed));
+	log->logData(heli::LOG_INPUT_RPM, speeds);
 }
 
 

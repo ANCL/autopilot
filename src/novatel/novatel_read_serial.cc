@@ -311,7 +311,7 @@ void GPS::read_serial::parse_log(const std::vector<uint8_t>& data, std::vector<d
 	log.insert(log.end(), velocity_error.begin(), velocity_error.end());
 	gps.set_vel_sigma(ecef_to_ned(velocity_error, llh));
 
-	uint8_t num_sats = log[104];
+	uint8_t num_sats = log[105];
 	log += num_sats;
 	gps.set_num_sats(num_sats);
 }
