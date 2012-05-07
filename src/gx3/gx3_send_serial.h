@@ -21,6 +21,7 @@
 #define GX3_SEND_SERIAL_H_
 
 #include "IMU.h"
+#include "Debug.h"
 
 /* Boost Headers */
 #include <boost/signals2/signal.hpp>
@@ -106,11 +107,13 @@ std::vector<uint8_t> IMU::send_serial::float_to_raw(const floating_type f)
 template <typename IntegerType>
 std::vector<uint8_t> IMU::send_serial::int_to_raw(const IntegerType i)
 {
+//	debug() << "sizeof int" << sizeof(IntegerType) << ", i: " << i;
 	std::vector<uint8_t> result;
 	const uint8_t* byte = reinterpret_cast<const uint8_t*>(&i);
-	for (uint_t i= sizeof(IntegerType) - 1; i>= 0; i--)
+	for (int j= sizeof(IntegerType) - 1; j>= 0; j--)
 	{
-		result.push_back(byte[i]);
+//		debug() << std::hex << byte[j];
+		result.push_back(byte[j]);
 	}
 	return result;
 }

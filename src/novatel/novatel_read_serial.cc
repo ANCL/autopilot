@@ -256,9 +256,11 @@ bool GPS::read_serial::is_response(const std::vector<uint8_t>& header)
 void GPS::read_serial::parse_header(const std::vector<uint8_t>& header, std::vector<double>& log)
 {
 	std::vector<uint8_t>::const_iterator it = header.begin() + 10;
-	uint32_t time_status = parse_enum(header, 10);
+//	uint32_t time_status = parse_enum(header, 10);
+	uint32_t time_status = *it;
+//	debug() << "time status: " << time_status;
 	log += time_status;
-	it += 4;
+	it += 1;
 	uint16_t week = raw_to_int<uint16_t>(it);
 	log += week;
 	it += 2;

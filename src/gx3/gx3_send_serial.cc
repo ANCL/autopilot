@@ -347,7 +347,7 @@ void IMU::send_serial::init_filter()
 
 void IMU::send_serial::external_gps_update()
 {
-	if (IMU::getInstance()->get_gx3_mode() == IMU::RUNNING)
+//	if (IMU::getInstance()->get_gx3_mode() == IMU::RUNNING)
 	{
 		// get gps data
 		GPS* gps = GPS::getInstance();
@@ -357,6 +357,16 @@ void IMU::send_serial::external_gps_update()
 		blas::vector<float> vel_error(gps->get_vel_sigma());
 		gps_time time(gps->get_gps_time());
 
+		debug() << "sending gps time: " << time;
+
+		debug() << "sending llh pos: " << llh;
+
+		debug() << "sending velocity: " << vel;
+
+		debug() << "sending pos_error" << pos_error;
+
+		debug() << "sending vel_error:" << vel_error;
+//		debug() << "got data from gps";
 		// create message
 		std::vector<uint8_t> gps_update;
 		gps_update += 0x75, 0x65, 0x0d, 48, 48, 16;
@@ -377,18 +387,18 @@ void IMU::send_serial::external_gps_update()
 			pack_float(vel_error[i], gps_update);
 
 		std::vector<uint8_t> checksum = compute_checksum(gps_update);
-		gps_update.insert(gps_update.end(), gps_update.begin(), gps_update.end());
+		gps_update.insert(gps_update.end(), checksum.begin(), checksum.end());
 
-		ack_handler gps_update_ack(0x16);
+//		ack_handler gps_update_ack(0x16);
 
 		send_lock.lock();
 		write(IMU::getInstance()->fd_ser, &gps_update[0], gps_update.size());
 		send_lock.unlock();
-
-		gps_update_ack.wait_for_ack();
-		if (gps_update_ack.get_error_code() == 0x00)
-			debug() << "Successfully updated gx3 with external gps measurement.";
-		else
-			message() << "Error sending External GPS Update with code: " << static_cast<int>(gps_update_ack.get_error_code());
+//		debug() << "sent gps update, waiting for ack";
+//		gps_update_ack.wait_for_ack();
+//		if (gps_update_ack.get_error_code() == 0x00)
+//			debug() << "Successfully updated gx3 with external gps measurement.";
+//		else
+//			message() << "Error sending External GPS Update with code: " << static_cast<int>(gps_update_ack.get_error_code());
 	}
 }

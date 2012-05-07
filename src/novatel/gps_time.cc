@@ -66,13 +66,15 @@ std::string gps_time::get_status_string() const
 		return "Fine Steering";
 	case SATTIME:
 		return "Sat Time";
+	default:
+		return "not listed";
 	}
 	return std::string();
 }
 
 Debug& operator<<(Debug& dbg, const gps_time& gt)
 {
-	return dbg << "Time of week: " << gt.week << ", seconds: " << gt.seconds << " Status: " << gt.get_status_string();
+	return dbg << "week number: " << gt.week << ", seconds: " << gt.seconds << " Status: " << gt.get_status_string();
 }
 
 
