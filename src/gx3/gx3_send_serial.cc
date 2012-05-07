@@ -357,26 +357,28 @@ void IMU::send_serial::external_gps_update()
 		blas::vector<float> vel_error(gps->get_vel_sigma());
 		gps_time time(gps->get_gps_time());
 
-		debug() << "sending gps time: " << time;
+//		debug() << "sending gps time: " << time;
 
-		debug() << "sending llh pos: " << llh;
+//		debug() << "sending llh pos: " << llh;
 
-		debug() << "sending velocity: " << vel;
+//		debug() << "sending velocity: " << vel;
 
-		debug() << "sending pos_error" << pos_error;
+//		debug() << "sending pos_error" << pos_error;
 
-		debug() << "sending vel_error:" << vel_error;
+//		debug() << "sending vel_error:" << vel_error;
 //		debug() << "got data from gps";
 		// create message
 		std::vector<uint8_t> gps_update;
-		gps_update += 0x75, 0x65, 0x0d, 48, 48, 16;
+		gps_update += 0x75, 0x65, 0x0d, 0x48, 0x48, 0x16;
 
 		pack_float(time.get_seconds(), gps_update);
 		pack_int(time.get_week(), gps_update);
 
+//		debug() << "pack llh";
 		for (int i=0; i<3; i++)
 			pack_float(llh[i], gps_update);
 
+//		debug() << "pack velocity";
 		for (int i=0; i<3; i++)
 			pack_float(vel[i], gps_update);
 
@@ -389,16 +391,19 @@ void IMU::send_serial::external_gps_update()
 		std::vector<uint8_t> checksum = compute_checksum(gps_update);
 		gps_update.insert(gps_update.end(), checksum.begin(), checksum.end());
 
-//		ack_handler gps_update_ack(0x16);
+//		debug() << "gps message size: " << gps_update.size() << " message: " << std::hex <<  gps_update;
+
+		ack_handler gps_update_ack(0x16);
 
 		send_lock.lock();
 		write(IMU::getInstance()->fd_ser, &gps_update[0], gps_update.size());
 		send_lock.unlock();
 //		debug() << "sent gps update, waiting for ack";
-//		gps_update_ack.wait_for_ack();
+		gps_update_ack.wait_for_ack();
 //		if (gps_update_ack.get_error_code() == 0x00)
 //			debug() << "Successfully updated gx3 with external gps measurement.";
 //		else
-//			message() << "Error sending External GPS Update with code: " << static_cast<int>(gps_update_ack.get_error_code());
+		if (gps_update_ack.get_error_code() != 0x00)
+			warning() << "Error sending External GPS Update with code: " << static_cast<int>(gps_update_ack.get_error_code());
 	}
 }

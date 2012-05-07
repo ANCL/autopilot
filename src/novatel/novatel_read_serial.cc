@@ -362,12 +362,19 @@ blas::vector<double> GPS::read_serial::ecef_to_llh(const blas::vector<double>& e
 
 void GPS::read_serial::send_unlog_command()
 {
-	std::vector<uint8_t> command(generate_header(38, 8));
+	std::vector<uint8_t> command(generate_header(36, 8));
 
-	command.insert(command.end(), 8, 0);
+	std::vector<uint8_t> port(int_to_raw(192));
+	command.insert(command.end(), port.begin(), port.end());
+
+	std::vector<uint8_t> id(int_to_raw(static_cast<uint16_t>(244)));
+	command.insert(command.end(), id.begin(), id.end());
+
+	command+= 0,0;
+
 	std::vector<uint8_t> checksum(compute_checksum(command));
-//	debug() << "unlog checksum" << std::hex << checksum;
 	command.insert(command.end(), checksum.begin(), checksum.end());
+
 	write(fd_ser, &command[0], command.size());
 }
 
