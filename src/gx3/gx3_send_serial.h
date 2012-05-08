@@ -57,7 +57,7 @@ private:
 	void reset_filter();
 	/// set the initial filter attitude from the AHRS
 	void init_filter();
-	/// update the gx3 with the novatel measurement
+	/// update the gx3 with the novatel measurement @note llh converted to degrees for transmission to gx3
 	void external_gps_update();
 
 	template <typename floating_type>

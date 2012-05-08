@@ -31,6 +31,7 @@
 #include <boost/signals2.hpp>
 #include <boost/thread.hpp>
 #include <boost/ref.hpp>
+#include <boost/math/constants/constants.hpp>
 #include <boost/assign.hpp>
 // this scope only pollutes the global namespace in a minimal way consistent with the stl global operators
 using namespace boost::assign;
@@ -352,6 +353,8 @@ void IMU::send_serial::external_gps_update()
 		// get gps data
 		GPS* gps = GPS::getInstance();
 		blas::vector<double> llh(gps->get_llh_position());
+		llh[0]*=180.0/boost::math::constants::pi<double>();
+		llh[1]*=180.0/boost::math::constants::pi<double>();
 		blas::vector<float> vel(gps->get_ned_velocity());
 		blas::vector<float> pos_error(gps->get_pos_sigma());
 		blas::vector<float> vel_error(gps->get_vel_sigma());

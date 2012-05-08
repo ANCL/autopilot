@@ -335,23 +335,22 @@ blas::vector<double> GPS::read_serial::ecef_to_llh(const blas::vector<double>& e
 	// Initialization
 	double RN = a;
 	double p=sqrt(pow(ecef[0],2)+pow(ecef[1],2));
-	double error_h = 0;
+//	double error_h = 0;
 	double prev_h = 0;
 	double sin_phi = 0;
 	double phi = 0;
-	double RN_phi = 0;
+//	double RN_phi = 0;
 
 	// Iteration
 	do
 	{
+		prev_h = llh[2];
 		sin_phi = ecef[2]/((1 - pow(e,2))*RN + llh[2]);
 		phi = atan((ecef[2] + pow(e,2)*RN*sin_phi)/p);
-		RN_phi = a/sqrt(1 - pow(e,2)*pow(sin(phi),2));
-		llh[2] = p/cos(phi)-RN_phi;
-		error_h = llh[2] - prev_h;
-		prev_h = llh[2];
+		RN = a/sqrt(1 - pow(e,2)*pow(sin(phi),2));
+		llh[2] = p/cos(phi)-RN;
 	}
-	while(abs(error_h)>0.000001);
+	while(abs(llh[2] - prev_h)>0.000001);
 
 	// Saving results (origin coordinates)
 	llh[0] = phi; //latitude

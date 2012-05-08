@@ -119,7 +119,7 @@ private:
 	template<typename FloatingType>
 	static blas::vector<FloatingType> ecef_to_ned(const blas::vector<FloatingType>& ecef, const blas::vector<double>& llh);
 
-	/// convert ecef position measurement into llh
+	/// convert ecef position measurement into llh @note llh is in radians (easier for trig computations - must be converted to degrees for gx3)
 	static blas::vector<double> ecef_to_llh(const blas::vector<double>& ecef);
 
 	/// check whether the header is from a response message
