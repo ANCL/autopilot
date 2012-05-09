@@ -34,10 +34,12 @@ Control::Control()
  config_file_buffer(NULL),
  controller_mode(heli::Num_Controller_Modes),
  mode_connection(QGCLink::getInstance()->control_mode.connect(
-		 boost::bind(&Control::set_controller_mode, this, _1)))
+		 boost::bind(&Control::set_controller_mode, this, _1))),
+ reference_position(3)
 {
 	// load config file
 	loadFile();
+	reference_position.clear();
 }
 
 Control* Control::_instance = NULL;
