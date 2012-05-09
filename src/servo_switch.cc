@@ -33,7 +33,7 @@ servo_switch* servo_switch::getInstance()
 servo_switch::servo_switch()
 : raw_inputs(9, 0),
   raw_outputs(9,0),
-  pilot_mode(heli::PILOT_MANUAL)
+  pilot_mode(heli::PILOT_UNKNOWN)
 {
 	init_port();
 	receive = boost::thread(read_serial());
