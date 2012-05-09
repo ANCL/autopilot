@@ -195,11 +195,8 @@ void QGCLink::QGCSend::send()
 			  send_rc_channels(send_queue);
 
 		  /* send control effort */
-//		  qgc->stream_lock.lock();
-//		  int control_effort_rate = qgc->control_output_rate;
-//		  qgc->stream_lock.unlock();
-//		  if (should_run(control_effort_rate, send_rate, loop_count))
-//			  send_control_effort(send_queue);
+		  if (should_run(qgc->get_control_output_rate(), send_rate, loop_count))
+			  send_control_effort(send_queue);
 
 		  if (should_run(qgc->get_position_rate(), send_rate, loop_count))
 			  send_position(send_queue);
@@ -544,17 +541,19 @@ void QGCLink::QGCSend::send_status(std::queue<std::vector<uint8_t> >* sendq)
 
 void QGCLink::QGCSend::send_control_effort(std::queue<std::vector<uint8_t> > *sendq)
 {
-//	mavlink_message_t msg;
-//	std::vector<uint8_t> buf(MAVLINK_MAX_PACKET_LEN);
+	mavlink_message_t msg;
+	std::vector<uint8_t> buf(MAVLINK_MAX_PACKET_LEN);
 
-//	std::vector<double> reference(Control::getInstance()->attitude_pid_controller().get_reference());
-//
-//	mavlink_msg_nav_controller_output_pack(100, 200, &msg,
-//			reference[0]*180/boost::math::constants::pi<double>(),
-//			reference[1]*180/boost::math::constants::pi<double>(),
-//			0,0,0,0,0,0);
-//	buf.resize(mavlink_msg_to_send_buffer(&buf[0], &msg));
-//	sendq->push(buf);
+	blas::vector<double> effort(Control::getInstance()->get_control_effort());
+	std::vector<float> control(effort.begin(), effort.end());
+
+	mavlink_msg_ualberta_control_effort_pack(qgc->uasId, heli::CONTROLLER_ID, &msg, &control[0]);
+
+
+
+
+	buf.resize(mavlink_msg_to_send_buffer(&buf[0], &msg));
+	sendq->push(buf);
 }
 
 void QGCLink::QGCSend::send_gx3_message(std::queue<std::vector<uint8_t> > *sendq)
