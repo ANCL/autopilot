@@ -27,6 +27,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 namespace blas = boost::numeric::ublas;
 #include <boost/smart_ptr/scoped_ptr.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 /* STL Headers */
 #include <vector>
@@ -276,9 +277,21 @@ private:
 	/// threadsafe set angular_rate
 	inline void set_ahrs_angular_rate(const blas::vector<double>& angular_rate) {boost::mutex::scoped_lock lock(ahrs_angular_rate_lock); ahrs_angular_rate = angular_rate;}
 
+	/// store the last time data was successfully received
+	boost::posix_time::ptime last_data;
+	/// serialize access to last_data
+	mutable boost::mutex last_data_lock;
+	/// set last_data to the current time
+	inline void set_last_data() {boost::mutex::scoped_lock lock(last_data_lock); last_data = boost::posix_time::second_clock::local_time();}
+	/// get the number of seconds since data was received
+	inline int seconds_since_last_data() const {boost::mutex::scoped_lock lock(last_data_lock); return (boost::posix_time::second_clock::local_time() - last_data).total_seconds();}
+
 
 	/// send ack/nack signal when received from imu
 	boost::signals2::signal<void (std::vector<uint8_t>)> ack;
+
+	/// signal to notify imu it needs to reinitialize the serial connection
+	boost::signals2::signal<void ()> initialize_imu;
 
 	/// convert llh to ecef
 	static blas::vector<double> llh2ecef(const blas::vector<double>& llh_deg);

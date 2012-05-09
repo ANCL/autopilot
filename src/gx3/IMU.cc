@@ -57,7 +57,7 @@ IMU* IMU::getInstance()
 }
 
 IMU::IMU()
-:_send_serial(new send_serial),
+:
  position(blas::zero_vector<double>(3)),
  ned_origin(blas::zero_vector<double>(3)),
  velocity(blas::zero_vector<double>(3)),
@@ -83,6 +83,7 @@ IMU::IMU()
 
 	receive_thread = boost::thread(read_serial());
 	parse_thread = boost::thread(message_parser());
+	_send_serial.reset(new send_serial(this));
 }
 
 IMU::~IMU()

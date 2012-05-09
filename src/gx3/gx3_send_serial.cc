@@ -36,7 +36,7 @@
 // this scope only pollutes the global namespace in a minimal way consistent with the stl global operators
 using namespace boost::assign;
 
-IMU::send_serial::send_serial()
+IMU::send_serial::send_serial(IMU* parent)
 : reset_connection(QGCLink::getInstance()->reset_filter.connect(
 		boost::bind(&IMU::send_serial::start_send_thread<boost::function<void ()> >,
 				this, boost::function<void ()>(boost::bind(&IMU::send_serial::reset_filter, this))))),
@@ -45,7 +45,11 @@ IMU::send_serial::send_serial()
 				  this, boost::function<void ()>(boost::bind(&IMU::send_serial::init_filter, this))))),
   gps_update_connection(GPS::getInstance()->gps_updated.connect(
 		  boost::bind(&IMU::send_serial::start_send_thread<boost::function<void ()> >,
-				  this, boost::function<void ()>(boost::bind(&IMU::send_serial::external_gps_update, this)))))
+				  this, boost::function<void ()>(boost::bind(&IMU::send_serial::external_gps_update, this))))),
+  initialize_imu_connection(parent->initialize_imu.connect(
+		  boost::bind(&IMU::send_serial::start_send_thread<boost::function<void ()> >,
+				  this, boost::function<void ()>(boost::bind(&IMU::send_serial::init_imu, this)))))
+
 {
 	boost::thread t(boost::bind(&IMU::send_serial::init_imu, this));
 }
@@ -59,6 +63,7 @@ void IMU::send_serial::init_imu()
 	set_filter_parameters();
 	reset_filter();
 	enable_messages();
+
 }
 
 

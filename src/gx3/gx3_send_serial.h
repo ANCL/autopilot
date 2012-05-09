@@ -36,7 +36,7 @@
 class IMU::send_serial
 {
 public:
-	send_serial();
+	send_serial(IMU* parent = 0);
 //	void operator()();
 private:
 	/// send the sequence of messages necessary to initialize the imu
@@ -86,6 +86,8 @@ private:
 	boost::signals2::scoped_connection init_filter_connection;
 	/// connection to update gps measurement
 	boost::signals2::scoped_connection gps_update_connection;
+	/// connection to re-initialize the imu when the autopilot stops receiving data
+	boost::signals2::scoped_connection initialize_imu_connection;
 };
 
 template<typename Callable>

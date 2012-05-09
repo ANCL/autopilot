@@ -39,10 +39,19 @@ void IMU::read_serial::operator()()
 	buffer.reserve(259); // the gx3 specs a 1 byte length field so this should be enough for max packet length including header
 	std::vector<uint8_t> checksum(2, 0);
 	const int fd_ser = IMU::getInstance()->fd_ser;
+	IMU::getInstance()->set_last_data();
 	while (true)
 	{
+		if (IMU::getInstance()->seconds_since_last_data() > 3)
+		{
+			warning() << "Stopped receiving data from GX3.  Attempting to reinitialize serial connection";
+			IMU& imu = *IMU::getInstance();
+			imu.initialize_imu();
+			imu.set_last_data();
+		}
 		int bytes = readcond(fd_ser, &sync_byte, 1, 1, 10, 10);
-		if (bytes < 1);
+		if (bytes < 1)
+			continue;
 		else if (sync_byte == 0x75)
 		{
 			// got first sync byte
@@ -51,6 +60,7 @@ void IMU::read_serial::operator()()
 		else if (found_sync && sync_byte == 0x65)
 		{
 			found_sync = false;
+			IMU::getInstance()->set_last_data();
 			// got both sync bytes - get message
 			uint8_t descriptor = 0, length = 0;
 			int bytes = readcond(fd_ser, &descriptor, 1, 1, 10, 10);
