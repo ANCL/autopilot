@@ -213,7 +213,7 @@ void IMU::send_serial::set_filter_parameters()
 
 	// auto initialization
 	std::vector<uint8_t> init;
-	init += 0x04, 0x19, 0x01, 0x00;
+	init += 0x04, 0x19, 0x01, 0x01;
 	ack_handler init_ack(0x19);
 
 	// create message header
