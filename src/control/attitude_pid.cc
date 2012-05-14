@@ -217,7 +217,7 @@ void attitude_pid::set_pitch_trim_degrees(double trim_degrees)
 		boost::mutex::scoped_lock lock(pitch_trim_lock);
 		pitch_trim = trim_degrees * boost::math::constants::pi<double>()/180;
 	}
-	message() << "Set roll trim to " << trim_degrees << " deg.";
+	message() << "Set pitch trim to " << trim_degrees << " deg.";
 }
 
 
