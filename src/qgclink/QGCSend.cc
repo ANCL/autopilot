@@ -146,6 +146,10 @@ void QGCLink::QGCSend::send()
 
   int loop_count = 0;
 
+  // get initial system modes
+  pilot_mode = servo_switch::getInstance()->get_pilot_mode();
+  control_mode = Control::getInstance()->get_controller_mode();
+
   // connect signals to track system mode
   boost::signals2::scoped_connection control_mode_connection(Control::getInstance()->mode_changed.connect(
 		  boost::bind(&QGCLink::QGCSend::set_control_mode, this, _1)));
