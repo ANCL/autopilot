@@ -106,8 +106,8 @@ public:
 
 	inline double get_engine_speed() const {boost::mutex::scoped_lock(engine_speed_lock); return engine_speed;}
 	inline double get_engine_rpm() const {return get_engine_speed()*60;}
-	inline double get_main_rotor_speed() const {return get_engine_speed()/7.5;}
-	inline double get_main_rotor_rpm() const {return get_engine_rpm()/7.5;}
+	inline double get_main_rotor_speed() const {return get_engine_speed()*90.0/13.0;}
+	inline double get_main_rotor_rpm() const {return get_engine_rpm()*90.0/13.0;}
 
 private:
 	servo_switch();
