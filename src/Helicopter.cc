@@ -21,7 +21,10 @@
 
 Helicopter::Helicopter()
 	:radio_cal_data(RadioCalibration::getInstance()),
-	 out(servo_switch::getInstance())
+	 out(servo_switch::getInstance()),
+	 mass(13.65),
+	 gravity(9.8)
+
 {
 
 }
