@@ -49,8 +49,8 @@ public:
 	/// integrate position error, and compute the resulting control effort
 	void operator()(const blas::vector<double>& reference) throw(bad_control);
 
-	/// return the current control effort
-	blas::vector<double> get_control_effort() const;
+	/// @returns the roll pitch reference in radians (threadsafe)
+	inline blas::vector<double> get_control_effort() const {boost::mutex::scoped_lock lock(control_effort_lock); return control_effort;}
 
 	/// return the scaled travel in degrees
 	inline double scaled_travel_degrees() const {boost::mutex::scoped_lock lock(scaled_travel_lock); return scaled_travel;}

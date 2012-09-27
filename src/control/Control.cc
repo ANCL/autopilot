@@ -289,12 +289,34 @@ void Control::operator()()
 		}
 		else
 		{
-			warning() <<"Control: translation controller reports it is not runnable.  Switching to attitude control.";
+			warning() <<"Control: translation pid controller reports it is not runnable.  Switching to attitude control.";
 			set_controller_mode(heli::Mode_Attitude_Stabilization_PID);
 		}
 
 		// prevents exception being thrown
 		return;
+	}
+	else if (get_controller_mode() == heli::Mode_Position_Hold_SBF)
+	{
+		if (x_y_sbf_controller.runnable())
+		{
+			try
+			{
+				x_y_sbf_controller(get_reference_position());
+				blas::vector<double> attitude_reference(x_y_sbf_controller.get_control_effort());
+				LogFile::getInstance()->logData(heli::)
+			}
+			catch (bad_control& bc)
+			{
+				warning() << "Caught exception from Translation SBF Controller, switching to attitude stabilization.";
+				set_controller_mode(heli::Mode_Attitude_Stabilization_PID);
+			}
+		}
+		else
+		{
+			warning() <<"Control: translation sbf controller reports it is not runnable.  Switching to attitude control.";
+			set_controller_mode(heli::Mode_Attitude_Stabilization_PID);
+		}
 	}
 	// not else if so that it will run if the mode was changed
 	if (get_controller_mode() == heli::Mode_Attitude_Stabilization_PID)
