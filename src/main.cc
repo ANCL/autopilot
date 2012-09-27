@@ -21,6 +21,7 @@
    \author Bryan Godbolt <godbolt@ece.ualberta.ca>
    @author Nikos Vitzilaios <nvitzilaios@ualberta.ca>
    @author Aakash Vasudevan <avasudev@ualberta.ca>
+   \author Hasitha Senanayake <senanaya@ualberta.ca>
    \mainpage
    This project contains the code for the autopilot system.  This documentation is available on the
    local network at http://doc/autopilot/html/index.html .
