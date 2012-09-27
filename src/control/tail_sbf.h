@@ -21,9 +21,15 @@
  * @brief Implement translation control with tail rotor sbf compensation as described in ACC2013 Godbolt/Lynch
  *
  * @author Bryan Godbolt <godbolt@ece.ualberta.ca>
+ * @date: September 26, 2012: Class creation
  */
 #ifndef TAIL_SBF_H_
 #define TAIL_SBF_H_
+
+/* Boost Headers */
+#include <boost/math/constants/constants.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+namespace blas = boost::numeric::ublas;
 
 /* Project Headers */
 #include "pid_channel.h"

@@ -43,7 +43,7 @@ namespace blas = boost::numeric::ublas;
 QGCLink::QGCSend::QGCSend(QGCLink* parent)
 :qgc(parent),
  servo_source(heli::NUM_AUTOPILOT_MODES),
- pilot_mode(heli::NUL_PILOT_MODES),
+ pilot_mode(heli::NUM_PILOT_MODES),
  filter_state(IMU::NUM_GX3_MODES),
  control_mode(heli::Num_Controller_Modes),
  attitude_source(true),

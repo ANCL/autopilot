@@ -18,6 +18,7 @@
  *************************************************************************/
 
 #include "tail_sbf.h"
+#include "IMU.h"
 
 tail_sbf::tail_sbf() {
 
@@ -26,8 +27,8 @@ tail_sbf::tail_sbf() {
 
 void tail_sbf::reset()
 {
-	x.reset();
-	y.reset();
+	ned_x.reset();
+	ned_y.reset();
 }
 
 bool tail_sbf::runnable() const
@@ -42,21 +43,21 @@ void tail_sbf::operator()(const blas::vector<double>& reference) throw(bad_contr
 	blas::vector<double> ned_position_error(imu->get_ned_position() - reference);
 	blas::vector<double> ned_velocity_error(imu->get_ned_velocity());
 
-	blas::vector<double>
-	{
-		boost::mutex::scoped_lock lock(x_lock);
-		x.error().proportional() = body_position_error[0];
-		x.error().derivative() = body_velocity_error[0];
-		++(x.error());
-		attitude_reference[1] = x.compute_pid();
-	}
-	{
-		boost::mutex::scoped_lock lock(y_lock);
-		y.error().proportional() = body_position_error[1];
-		y.error().derivative() = body_velocity_error[1];
-		++(y.error());
-		attitude_reference[0] = -y.compute_pid();
-	}
+//	blas::vector<double>
+//	{
+//		boost::mutex::scoped_lock lock(x_lock);
+//		x.error().proportional() = body_position_error[0];
+//		x.error().derivative() = body_velocity_error[0];
+//		++(x.error());
+//		attitude_reference[1] = x.compute_pid();
+//	}
+//	{
+//		boost::mutex::scoped_lock lock(y_lock);
+//		y.error().proportional() = body_position_error[1];
+//		y.error().derivative() = body_velocity_error[1];
+//		++(y.error());
+//		attitude_reference[0] = -y.compute_pid();
+//	}
 }
 
 blas::vector<double> tail_sbf::get_control_effort() const
