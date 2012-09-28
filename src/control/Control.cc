@@ -199,7 +199,7 @@ void Control::set_pitch_mix(double pitch_mix)
 
 void Control::loadFile()
 {
-	if (!boost::filesystem::exists(heli::calibration_filename))
+	if (!boost::filesystem::exists(heli::controller_param_filename))
 	{
 		warning() << __FILE__ << __LINE__ << "Cannot find controller parameter xml file: " << heli::controller_param_filename;
 		return;
