@@ -28,6 +28,7 @@
 #include "attitude_pid.h"
 #include "translation_outer_pid.h"
 #include "ControllerInterface.h"
+#include "tail_sbf.h"
 
 /* Boost Headers */
 #include <boost/numeric/ublas/vector.hpp>
@@ -151,6 +152,9 @@ private:
 	 * for the inner controller
 	 */
 	translation_outer_pid x_y_pid_controller;
+
+	/// PID control with tail rotor sbf compensation
+	tail_sbf x_y_sbf_controller;
 
 	/**
 	 * Stores the weighting used to calculate the pilot mix with the controller output.
