@@ -85,6 +85,15 @@ std::vector<Parameter> Helicopter::getParameters()
 	return plist;
 }
 
+void Helicopter::setParameter(Parameter p)
+{
+	std::string param_id(p.getParamID());
+	boost::trim(param_id);
+
+	if (param_id == PARAM_MASS)
+		set_mass(p.getValue());
+}
+
 uint16_t Helicopter::norm2pulse(double norm, boost::array<uint16_t, 3> setpoint)
 {
         uint16_t pulse = 0;

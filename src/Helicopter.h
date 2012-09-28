@@ -37,6 +37,7 @@ namespace blas = boost::numeric::ublas;
 #include "RCTrans.h"
 #include "heli.h"
 #include "Parameter.h"
+#include "Debug.h"
 
 /**
     \brief This class handles output pulse scaling from normalized values
@@ -166,7 +167,7 @@ private:
   /// serialize access to mass
   mutable boost::mutex mass_lock;
   /// set the mass
-  void set_mass(const double mass) {boost::mutex::scoped_lock(mass_lock); this->mass = mass;}
+  inline void set_mass(const double mass) {{boost::mutex::scoped_lock(mass_lock); this->mass = mass;} message() << "Mass set to " << mass;}
 
   /// acceleration due to gravity (m/s^2)
   const double gravity;
@@ -176,39 +177,39 @@ private:
   /// serialize access to main_hub_offset
   mutable boost::mutex main_hub_offset_lock;
   /// set the main rotor hub offset
-  void set_main_hub_offset(const blas::vector<double>& main_hub_offset) {boost::mutex::scoped_lock(main_hub_offset_lock); this->main_hub_offset = main_hub_offset;}
+  inline void set_main_hub_offset(const blas::vector<double>& main_hub_offset) {boost::mutex::scoped_lock(main_hub_offset_lock); this->main_hub_offset = main_hub_offset;}
   /// set the body x main_hub_offset
-  void set_main_hub_offset_x(const double& main_hub_offset_x) {boost::mutex::scoped_lock(main_hub_offset_lock); main_hub_offset(0) = main_hub_offset_x;}
+  inline void set_main_hub_offset_x(const double& main_hub_offset_x) {{boost::mutex::scoped_lock(main_hub_offset_lock); main_hub_offset(0) = main_hub_offset_x;} message() << "Main Hub Offset x set to " << main_hub_offset_x;}
   /// set the body y main_hub_offset
-  void set_main_hub_offset_y(const double& main_hub_offset_y) {boost::mutex::scoped_lock(main_hub_offset_lock); main_hub_offset(1) = main_hub_offset_y;}
+  inline void set_main_hub_offset_y(const double& main_hub_offset_y) {{boost::mutex::scoped_lock(main_hub_offset_lock); main_hub_offset(1) = main_hub_offset_y;} message() << "Main Hub Offset y set to " << main_hub_offset_y;}
   /// set the body z main_hub_offset
-  void set_main_hub_offset_z(const double& main_hub_offset_z) {boost::mutex::scoped_lock(main_hub_offset_lock); main_hub_offset(2) = main_hub_offset_z;}
+  inline void set_main_hub_offset_z(const double& main_hub_offset_z) {{boost::mutex::scoped_lock(main_hub_offset_lock); main_hub_offset(2) = main_hub_offset_z;} message() << "Main Hub Offset z set to " << main_hub_offset_z;}
 
   /// tail rotor hub offset from com (m)
   blas::vector<double> tail_hub_offset;
   /// serialize access to tail_hub_offset
   mutable boost::mutex tail_hub_offset_lock;
   /// set the tail rotor hub offset
-  void set_tail_hub_offset(const blas::vector<double>& tail_hub_offset) {boost::mutex::scoped_lock(tail_hub_offset_lock); this->tail_hub_offset = tail_hub_offset;}
+  inline void set_tail_hub_offset(const blas::vector<double>& tail_hub_offset) {boost::mutex::scoped_lock(tail_hub_offset_lock); this->tail_hub_offset = tail_hub_offset;}
   /// set the body x tail_hub_offset
-  void set_tail_hub_offset_x(const double& tail_hub_offset_x) {boost::mutex::scoped_lock(tail_hub_offset_lock); tail_hub_offset(0) = tail_hub_offset_x;}
+  inline void set_tail_hub_offset_x(const double& tail_hub_offset_x) {{boost::mutex::scoped_lock(tail_hub_offset_lock); tail_hub_offset(0) = tail_hub_offset_x;} message() << "Tail Hub Offset x set to " << tail_hub_offset_x;}
   /// set the body y tail_hub_offset
-  void set_tail_hub_offset_y(const double& tail_hub_offset_y) {boost::mutex::scoped_lock(tail_hub_offset_lock); tail_hub_offset(1) = tail_hub_offset_y;}
+  inline void set_tail_hub_offset_y(const double& tail_hub_offset_y) {{boost::mutex::scoped_lock(tail_hub_offset_lock); tail_hub_offset(1) = tail_hub_offset_y;} message() << "Tail Hub Offset y set to " << tail_hub_offset_y;}
   /// set the body z tail_hub_offset
-  void set_tail_hub_offset_z(const double& tail_hub_offset_z) {boost::mutex::scoped_lock(tail_hub_offset_lock); tail_hub_offset(2) = tail_hub_offset_z;}
+  inline void set_tail_hub_offset_z(const double& tail_hub_offset_z) {{boost::mutex::scoped_lock(tail_hub_offset_lock); tail_hub_offset(2) = tail_hub_offset_z;} message() << "Tail Hub Offset z set to " << tail_hub_offset_z;}
 
   /// inertia matrix
   blas::banded_matrix<double> inertia;
   /// serialize access to inertia
   mutable boost::mutex inertia_lock;
   /// set the inertia matrix
-  void set_inertia(const blas::banded_matrix<double>& inertia) {boost::mutex::scoped_lock(inertia_lock); this->inertia = inertia;}
+  inline void set_inertia(const blas::banded_matrix<double>& inertia) {boost::mutex::scoped_lock(inertia_lock); this->inertia = inertia;}
   /// set the inertia in the body x
-  void set_inertia_x(const double& jx) {boost::mutex::scoped_lock(inertia_lock); inertia(1,1) = jx;}
+  inline void set_inertia_x(const double& jx) {{boost::mutex::scoped_lock(inertia_lock); inertia(1,1) = jx;} message() << "Inertia x set to " << jx;}
   /// set the inertia in the body y
-  void set_inertia_y(const double& jy) {boost::mutex::scoped_lock(inertia_lock); inertia(2,2) = jy;}
+  inline void set_inertia_y(const double& jy) {{boost::mutex::scoped_lock(inertia_lock); inertia(2,2) = jy;} message() << "Inertia y set to " << jy;}
   /// set the inertia in the body z
-  void set_inertia_z(const double& jz) {boost::mutex::scoped_lock(inertia_lock); inertia(3,3) = jz;}
+  inline void set_inertia_z(const double& jz) {{boost::mutex::scoped_lock(inertia_lock); inertia(3,3) = jz;} message() << "Inertia z set to " << jz;}
 
 };
 
