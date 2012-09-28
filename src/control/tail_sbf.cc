@@ -18,7 +18,15 @@
  *************************************************************************/
 
 #include "tail_sbf.h"
+
+/* Project Headers */
 #include "IMU.h"
+#include "tail_sbf.h"
+#include "Helicopter.h"
+#include "Control.h"
+
+/* STL Headers */
+#include <math.h>
 
 tail_sbf::tail_sbf() {
 
@@ -43,24 +51,52 @@ void tail_sbf::operator()(const blas::vector<double>& reference) throw(bad_contr
 	blas::vector<double> ned_position_error(imu->get_ned_position() - reference);
 	blas::vector<double> ned_velocity_error(imu->get_ned_velocity());
 
-//	blas::vector<double>
-//	{
-//		boost::mutex::scoped_lock lock(x_lock);
-//		x.error().proportional() = body_position_error[0];
-//		x.error().derivative() = body_velocity_error[0];
-//		++(x.error());
-//		attitude_reference[1] = x.compute_pid();
-//	}
-//	{
-//		boost::mutex::scoped_lock lock(y_lock);
-//		y.error().proportional() = body_position_error[1];
-//		y.error().derivative() = body_velocity_error[1];
-//		++(y.error());
-//		attitude_reference[0] = -y.compute_pid();
-//	}
+	blas::vector<double> ned_control(3);
+	ned_control.clear();
+	std::vector<double> error_states;
+	{
+		boost::mutex::scoped_lock lock(ned_x_lock);
+		error_states.push_back(ned_x.error().proportional() = ned_position_error(0));
+		error_states.push_back(ned_x.error().derivative() = ned_velocity_error(0));
+		error_states.push_back(++(ned_x.error()));
+		ned_control(0) = ned_x.compute_pid();
+	}
+	{
+		boost::mutex::scoped_lock lock(ned_y_lock);
+		error_states.push_back(ned_y.error().proportional() = ned_position_error(1));
+		error_states.push_back(ned_y.error().derivative() = ned_velocity_error(1));
+		error_states.push_back(++(ned_y.error()));
+		ned_control(1) = ned_y.compute_pid();
+	}
+
+	LogFile::getInstance()->logData(heli::LOG_TRANS_SBF_ERROR_STATES, error_states);
+
+	double heading = imu->get_euler()(2);
+	blas::matrix<double> Rz(3,3);
+	Rz.clear();
+	Rz(0,0) = cos(heading);
+	Rz(0,1) = -sin(heading);
+	Rz(1,0) = sin(heading);
+	Rz(1,1) = cos(heading);
+	Rz(2,2) = 1;
+
+	Helicopter* bergen = Helicopter::getInstance();
+	double m = bergen->get_mass();
+	double g = bergen->get_gravity();
+	ned_control(2) = -g;
+	blas::vector<double> body_control(m*prod(trans(Rz),ned_control));
+	double alpham = 0.04; // countertorque approximate slope
+	double xt = abs(bergen->get_tail_hub_offset()(0));
+
+	double theta_ref = atan(body_control(0)/body_control(2));
+	double phi_ref = -atan((alpham*sqrt(pow(body_control(0),2)+pow(body_control(2),2))+xt*body_control(1))/(alpham*body_control(1) - xt*sqrt(pow(body_control(0),2)+pow(body_control(2),2))));
+
+	blas::vector<double> attitude_reference(2);
+	attitude_reference(0) = phi_ref;
+	attitude_reference(1) = theta_ref;
+
+	Control::saturate(attitude_reference, scaled_travel_radians());
+
+	set_control_effort(attitude_reference);
 }
 
-blas::vector<double> tail_sbf::get_control_effort() const
-{
-
-}

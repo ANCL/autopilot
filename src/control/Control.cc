@@ -278,7 +278,7 @@ void Control::operator()()
 			{
 				translation_pid_controller()(get_reference_position());
 				blas::vector<double> roll_pitch_reference(translation_pid_controller().get_control_effort());
-				LogFile::getInstance()->logData(heli::LOG_TRANS_ATTITUDE_REF, roll_pitch_reference);
+				LogFile::getInstance()->logData(heli::LOG_PID_TRANS_ATTITUDE_REF, roll_pitch_reference);
 				attitude_pid_controller()(roll_pitch_reference);
 			}
 			catch (bad_control& bc)
@@ -304,7 +304,7 @@ void Control::operator()()
 			{
 				x_y_sbf_controller(get_reference_position());
 				blas::vector<double> attitude_reference(x_y_sbf_controller.get_control_effort());
-				LogFile::getInstance()->logData(heli::LOG_TRANS_ATTITUDE_REF, attitude_reference);
+				LogFile::getInstance()->logData(heli::LOG_SBF_TRANS_ATTITUDE_REF, attitude_reference);
 				attitude_pid_controller()(attitude_reference);
 			}
 			catch (bad_control& bc)

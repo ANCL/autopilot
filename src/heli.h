@@ -70,7 +70,10 @@ const std::string LOG_ATTITUDE_REFERENCE = "Pilot Attitude Reference";
 const std::string LOG_POSITION_REFERENCE = "Position Reference (Nav Frame)";
 const std::string LOG_POSITION_ERROR = "Position Error (Body Frame)";
 const std::string LOG_NORMALIZED_OUTPUTS = "Normalized Outputs";
-const std::string LOG_TRANS_ATTITUDE_REF = "Translation PID Attitude Reference";
+const std::string LOG_PID_TRANS_ATTITUDE_REF = "Translation PID Attitude Reference";
+const std::string LOG_SBF_TRANS_ATTITUDE_REF = "Translation SBF Attitude Reference";
+const std::string LOG_TRANS_PID_ERROR_STATES = "Translation PID Error States";
+const std::string LOG_TRANS_SBF_ERROR_STATES = "Translation SBF Error States";
 
 //const std::string LOG_MICROSTRAIN_AHRS = "Microstrain AHRS";
 //const std::string LOG_MICROSTRAIN_AHRS_UNFILTERED = "Microstrain AHRS Unfiltered";
