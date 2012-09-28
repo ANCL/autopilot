@@ -60,35 +60,31 @@ void translation_outer_pid::operator()(const blas::vector<double>& reference) th
 	blas::vector<double> body_position_error(blas::prod(body_rotation, position - reference));
 	blas::vector<double> body_velocity_error(blas::prod(body_rotation, imu->get_ned_velocity()));
 
-	std::vector<double> log(body_position_error.begin(), body_position_error.end());
-	log.insert(log.end(), body_velocity_error.begin(), body_velocity_error.end());
-	LogFile::getInstance()->logData("Translation PID error", log);
-
 	// roll pitch reference
 	blas::vector<double> attitude_reference(2);
 	attitude_reference.clear();
+	std::vector<double> error_states;
 	{
 		boost::mutex::scoped_lock lock(x_lock);
-		x.error().proportional() = body_position_error[0];
-		x.error().derivative() = body_velocity_error[0];
-		++(x.error());
+		error_states.push_back(x.error().proportional() = body_position_error[0]);
+		error_states.push_back(x.error().derivative() = body_velocity_error[0]);
+		error_states.push_back(++(x.error()));
 		attitude_reference[1] = x.compute_pid();
 	}
 	{
 		boost::mutex::scoped_lock lock(y_lock);
-		y.error().proportional() = body_position_error[1];
-		y.error().derivative() = body_velocity_error[1];
-		++(y.error());
+		error_states.push_back(y.error().proportional() = body_position_error[1]);
+		error_states.push_back(y.error().derivative() = body_velocity_error[1]);
+		error_states.push_back(++(y.error()));
 		attitude_reference[0] = -y.compute_pid();
 	}
 
-	// get a normalized PID control signal
-	Control::saturate(attitude_reference);
+	LogFile::getInstance()->logData(heli::LOG_TRANS_PID_ERROR_STATES, error_states);
+
+	Control::saturate(attitude_reference, scaled_travel_radians());
 
 	// set the reference to a roll pitch orientation in radians
-	set_control_effort(attitude_reference * scaled_travel_radians());
-	// log the control effort
-	LogFile::getInstance()->logData("Translation PID reference attitude", attitude_reference * scaled_travel_radians());
+	set_control_effort(attitude_reference);
 }
 
 void translation_outer_pid::reset()
