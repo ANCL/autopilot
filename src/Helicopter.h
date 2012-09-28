@@ -101,6 +101,8 @@ public:
   blas::vector<double> get_main_hub_offset() const {boost::mutex::scoped_lock(main_hub_offset_lock); return main_hub_offset;}
   /// return the tail rotor hub offset
   blas::vector<double> get_tail_hub_offset() const {boost::mutex::scoped_lock(tail_hub_offset_lock); return tail_hub_offset;}
+  /// return the inertia matrix
+  blas::banded_matrix<double> get_inertia() const {boost::mutex::scoped_lock(inertia_lock); return inertia;}
 
   /// get a list of helicopter parameters
   std::vector<Parameter> getParameters();

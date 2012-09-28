@@ -24,10 +24,20 @@ Helicopter::Helicopter()
 	 out(servo_switch::getInstance()),
 	 mass(13.65),
 	 gravity(9.8),
+	 main_hub_offset(3),
+	 tail_hub_offset(3),
 	 inertia(3,3)
 
 {
+	main_hub_offset.clear();
+	main_hub_offset(2) = -0.32;
 
+	tail_hub_offset.clear();
+	tail_hub_offset(0) = -1.06;
+
+	inertia(0,0) = 0.36;
+	inertia(1,1) = 1.48;
+	inertia(2,2) = 1.21;
 }
 
 Helicopter* Helicopter::_instance = NULL;
