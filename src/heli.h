@@ -145,6 +145,7 @@ enum Controller_Mode
 {
 	Mode_Attitude_Stabilization_PID,
 	Mode_Position_Hold_PID,
+	Mode_Position_Hold_SBF,
 	Num_Controller_Modes
 };
 
