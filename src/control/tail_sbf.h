@@ -78,6 +78,43 @@ public:
 	static const std::string PARAM_Y_KI;
 
 	static const std::string PARAM_TRAVEL;
+
+	/** Set the x channel proportional gain
+	 * @param kp new proportional gain value
+	 * This function is threadsafe.
+	 */
+	void set_x_proportional(double kp);
+	/** set the x channel derivative gain
+	 * @param kd new derivative gain value
+	 * This function is threadsafe.
+	 */
+	void set_x_derivative(double kd);
+	/** set the x channel integral gain
+	 * @param ki new integral channel gain value
+	 * This function is threadsafe.
+	 */
+	void set_x_integral(double ki);
+	/** Set the y channel proportional gain
+	 * @param kp new proportional gain value
+	 * This function is threadsafe.
+	 */
+	void set_y_proportional(double kp);
+	/** Set the y channel derivative gain
+	 * @param kd new derivative gain value
+	 * This function is threadsafe.
+	 */
+	void set_y_derivative(double kd);
+	/**
+	 * Set the y channel integral gain
+	 * @param ki new integral gain value
+	 * This function is threadsafe.
+	 */
+	void set_y_integral(double ki);
+
+	/// create and xml tree with the controller parameters
+	rapidxml::xml_node<>* get_xml_node(rapidxml::xml_document<>& doc);
+	/// parse an xml tree containing the parameters for the function and populate the values
+	void parse_xml_node(rapidxml::xml_node<> *pid_params);
 private:
 	/// error states in ned x,y directions
 	pid_channel ned_x, ned_y;

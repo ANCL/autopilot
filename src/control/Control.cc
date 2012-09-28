@@ -241,6 +241,8 @@ void Control::loadFile()
 			attitude_pid_controller().parse_pid(node);
 		else if (std::string(node_name) == "translation_outer_pid")
 			translation_pid_controller().parse_xml_node(node);
+		else if (std::string(node_name) == "translation_outer_sbf")
+			x_y_sbf_controller.parse_xml_node(node);
 		else
 			warning() << __FILE__ << __LINE__ << "Found unknown node: " << node_name;
 	}
@@ -349,6 +351,10 @@ void Control::saveFile()
 	/* get trans pid params */
 	rapidxml::xml_node<> *trans_pid_node = translation_pid_controller().get_xml_node(config_file_xml);
 	root_node->append_node(trans_pid_node);
+
+	/* get sbf params */
+	rapidxml::xml_node<> *sbf_pid_node = x_y_sbf_controller.get_xml_node(config_file_xml);
+	root_node->append_node(sbf_pid_node);
 
 	/* add pilot mixes */
 	rapidxml::xml_node<> *node = NULL;

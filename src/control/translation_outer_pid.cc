@@ -142,7 +142,7 @@ void translation_outer_pid::set_x_proportional(double kp)
 		boost::mutex::scoped_lock lock(x_lock);
 		x.gains().proportional() = kp;
 	}
-	message() << "Set x proportional gain to: " << kp;
+	message() << "Set PID x proportional gain to: " << kp;
 }
 
 void translation_outer_pid::set_x_derivative(double kd)
@@ -151,7 +151,7 @@ void translation_outer_pid::set_x_derivative(double kd)
 		boost::mutex::scoped_lock lock(x_lock);
 		x.gains().derivative() = kd;
 	}
-	message() << "Set x derivative gain to: " << kd;
+	message() << "Set PID x derivative gain to: " << kd;
 }
 
 void translation_outer_pid::set_x_integral(double ki)
@@ -160,7 +160,7 @@ void translation_outer_pid::set_x_integral(double ki)
 		boost::mutex::scoped_lock lock(x_lock);
 		x.gains().integral() = ki;
 	}
-	message() << "Set x integral gain to: " << ki;
+	message() << "Set PID x integral gain to: " << ki;
 }
 
 void translation_outer_pid::set_y_proportional(double kp)
@@ -169,7 +169,7 @@ void translation_outer_pid::set_y_proportional(double kp)
 		boost::mutex::scoped_lock lock(y_lock);
 		y.gains().proportional() = kp;
 	}
-	message() << "Set y proportional gain to: " << kp;
+	message() << "Set PID y proportional gain to: " << kp;
 }
 
 void translation_outer_pid::set_y_derivative(double kd)
@@ -178,7 +178,7 @@ void translation_outer_pid::set_y_derivative(double kd)
 		boost::mutex::scoped_lock lock(y_lock);
 		y.gains().derivative() = kd;
 	}
-	message() << "Set y derivative gain to: " << kd;
+	message() << "Set PID y derivative gain to: " << kd;
 }
 
 void translation_outer_pid::set_y_integral(double ki)
@@ -187,7 +187,7 @@ void translation_outer_pid::set_y_integral(double ki)
 		boost::mutex::scoped_lock lock(y_lock);
 		y.gains().integral() = ki;
 	}
-	message() << "Set y integral gain to: " << ki;
+	message() << "Set PID y integral gain to: " << ki;
 }
 
 void translation_outer_pid::set_scaled_travel(double travel)
