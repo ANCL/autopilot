@@ -68,7 +68,7 @@ const unsigned int servo_switch_send_priority = 99;
 const std::string LOG_ATTITUDE_ERROR = "Attitude Error";
 const std::string LOG_ATTITUDE_REFERENCE = "Pilot Attitude Reference";
 const std::string LOG_POSITION_REFERENCE = "Position Reference (Nav Frame)";
-const std::string LOG_POSITION_ERROR = "Position Error (Body Frame)";
+//const std::string LOG_POSITION_ERROR = "Position Error (Body Frame)";
 const std::string LOG_NORMALIZED_OUTPUTS = "Normalized Outputs";
 const std::string LOG_PID_TRANS_ATTITUDE_REF = "Translation PID Attitude Reference";
 const std::string LOG_SBF_TRANS_ATTITUDE_REF = "Translation SBF Attitude Reference";
@@ -186,6 +186,7 @@ enum Channel
 
 const std::string calibration_filename = "/etc/autopilot/Calibration.xml";
 const std::string controller_param_filename = "/etc/autopilot/Controller_Parameters.xml";
+const std::string physical_param_filename = "/etc/autopilot/Physical_Parameters.xml";
 
 }
 #endif

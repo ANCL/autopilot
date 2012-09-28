@@ -49,6 +49,7 @@ namespace blas = boost::numeric::ublas;
  * @date October 26, 2011: Class creation
  * @date Januray 12, 2012: Added translational PID control
  * @date February 10, 2012: Refactored to comply with ControllerInterface
+ * @date September 27, 2012: Added Tail SBF Controller
  */
 class Control : public ControllerInterface
 {

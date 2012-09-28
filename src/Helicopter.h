@@ -211,6 +211,12 @@ private:
   /// set the inertia in the body z
   inline void set_inertia_z(const double& jz) {{boost::mutex::scoped_lock(inertia_lock); inertia(3,3) = jz;} message() << "Inertia z set to " << jz;}
 
+  ///Serializes access to the controller parameter file
+  mutable boost::mutex config_file_lock;
+  /// Save the configuration file on disk
+  void saveFile() const;
+  void loadFile();
+
 };
 
 #endif // HELICOPTER_H
