@@ -275,6 +275,7 @@ void QGCLink::QGCReceive::receive()
 									param_found = true;
 								}
 							}
+							break;
 						}
 						default:
 							warning() << "QGCLink: Received component id cannot be mapped to an on-board component.";

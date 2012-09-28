@@ -205,17 +205,22 @@ private:
   /// set the inertia matrix
   inline void set_inertia(const blas::banded_matrix<double>& inertia) {boost::mutex::scoped_lock(inertia_lock); this->inertia = inertia;}
   /// set the inertia in the body x
-  inline void set_inertia_x(const double& jx) {{boost::mutex::scoped_lock(inertia_lock); inertia(1,1) = jx;} message() << "Inertia x set to " << jx;}
+  inline void set_inertia_x(const double& jx) {{boost::mutex::scoped_lock(inertia_lock); inertia(0,0) = jx;} message() << "Inertia x set to " << jx;}
   /// set the inertia in the body y
-  inline void set_inertia_y(const double& jy) {{boost::mutex::scoped_lock(inertia_lock); inertia(2,2) = jy;} message() << "Inertia y set to " << jy;}
+  inline void set_inertia_y(const double& jy) {{boost::mutex::scoped_lock(inertia_lock); inertia(1,1) = jy;} message() << "Inertia y set to " << jy;}
   /// set the inertia in the body z
-  inline void set_inertia_z(const double& jz) {{boost::mutex::scoped_lock(inertia_lock); inertia(3,3) = jz;} message() << "Inertia z set to " << jz;}
+  inline void set_inertia_z(const double& jz) {{boost::mutex::scoped_lock(inertia_lock); inertia(2,2) = jz;} message() << "Inertia z set to " << jz;}
 
   ///Serializes access to the controller parameter file
   mutable boost::mutex config_file_lock;
-  /// Save the configuration file on disk
+  /// Save the configuration to the file heli::physical_param_filename
   void saveFile() const;
+  /// load the parameters stored in the configuration file heli::physical_param_filename
   void loadFile();
+  /// parse a vector xml node
+  void parse_vector_node(rapidxml::xml_node<> *vector_node);
+  /// pasrse a scalar xml node
+  void parse_scalar_node(rapidxml::xml_node<> *scalar_node);
 
 };
 
