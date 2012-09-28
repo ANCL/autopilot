@@ -125,6 +125,22 @@ void Control::setParameter(Parameter p)
 		translation_pid_controller().set_y_integral(p.getValue());
 	else if (param_id == translation_outer_pid::PARAM_TRAVEL)
 		translation_pid_controller().set_scaled_travel_degrees(p.getValue());
+
+	else if (param_id == tail_sbf::PARAM_TRAVEL)
+		x_y_sbf_controller.set_scaled_travel_degrees(p.getValue());
+	else if (param_id == tail_sbf::PARAM_X_KP)
+		x_y_sbf_controller.set_x_proportional(p.getValue());
+	else if (param_id == tail_sbf::PARAM_X_KD)
+		x_y_sbf_controller.set_x_derivative(p.getValue());
+	else if (param_id == tail_sbf::PARAM_X_KI)
+		x_y_sbf_controller.set_x_integral(p.getValue());
+	else if (param_id == tail_sbf::PARAM_Y_KP)
+		x_y_sbf_controller.set_y_proportional(p.getValue());
+	else if (param_id == tail_sbf::PARAM_Y_KD)
+		x_y_sbf_controller.set_y_derivative(p.getValue());
+	else if (param_id == tail_sbf::PARAM_Y_KI)
+		x_y_sbf_controller.set_y_integral(p.getValue());
+
 	else
 	{
 		warning() << "Control::setParameter - unknown parameter: " << p;
