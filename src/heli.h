@@ -65,11 +65,12 @@ const unsigned int qgcSendPriority = 85;
 const unsigned int servo_switch_send_priority = 99;
 
 // controller logs
-const std::string LOG_ATTITUDE_ERROR = "Attitude Error";
+const std::string LOG_ATTITUDE_ERROR = "Attitude PID Error States";
 const std::string LOG_ATTITUDE_REFERENCE = "Pilot Attitude Reference";
-const std::string LOG_POSITION_REFERENCE = "Position Reference (Nav Frame)";
+const std::string LOG_ATTITUDE_CONTROL_EFFORT = "Attitude PID Control Effort";
+//const std::string LOG_POSITION_REFERENCE = "Position Reference (Nav Frame)";
 //const std::string LOG_POSITION_ERROR = "Position Error (Body Frame)";
-const std::string LOG_NORMALIZED_OUTPUTS = "Normalized Outputs";
+//const std::string LOG_NORMALIZED_OUTPUTS = "Normalized Outputs";
 const std::string LOG_PID_TRANS_ATTITUDE_REF = "Translation PID Attitude Reference";
 const std::string LOG_SBF_TRANS_ATTITUDE_REF = "Translation SBF Attitude Reference";
 const std::string LOG_TRANS_PID_ERROR_STATES = "Translation PID Error States";
