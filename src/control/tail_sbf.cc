@@ -100,3 +100,35 @@ void tail_sbf::operator()(const blas::vector<double>& reference) throw(bad_contr
 	set_control_effort(attitude_reference);
 }
 
+const std::string tail_sbf::PARAM_X_KP = "SBF_X_KP";
+const std::string tail_sbf::PARAM_X_KD = "SBF_X_KD";
+const std::string tail_sbf::PARAM_X_KI = "SBF_X_KI";
+
+const std::string tail_sbf::PARAM_Y_KP = "SBF_Y_KP";
+const std::string tail_sbf::PARAM_Y_KD = "SBF_Y_KD";
+const std::string tail_sbf::PARAM_Y_KI = "SBF_Y_KI";
+
+const std::string tail_sbf::PARAM_TRAVEL = "SBF_TRAVEL";
+
+std::vector<Parameter> tail_sbf::getParameters() const
+{
+	std::vector<Parameter> plist;
+
+	{
+		boost::mutex::scoped_lock lock(ned_x_lock);
+		plist.push_back(Parameter(PARAM_X_KP, ned_x.gains().proportional(), heli::CONTROLLER_ID));
+		plist.push_back(Parameter(PARAM_X_KD, ned_x.gains().derivative(), heli::CONTROLLER_ID));
+		plist.push_back(Parameter(PARAM_X_KI, ned_x.gains().integral(), heli::CONTROLLER_ID));
+	}
+
+	{
+		boost::mutex::scoped_lock lock(ned_y_lock);
+		plist.push_back(Parameter(PARAM_Y_KP, ned_y.gains().proportional(), heli::CONTROLLER_ID));
+		plist.push_back(Parameter(PARAM_Y_KD, ned_y.gains().derivative(), heli::CONTROLLER_ID));
+		plist.push_back(Parameter(PARAM_Y_KI, ned_y.gains().integral(), heli::CONTROLLER_ID));
+	}
+
+	plist.push_back(Parameter(PARAM_TRAVEL, scaled_travel_degrees(), heli::CONTROLLER_ID));
+
+	return plist;
+}

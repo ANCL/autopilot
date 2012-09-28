@@ -25,6 +25,7 @@
 #include "MainApp.h"
 #include "IMU.h"
 #include "GPS.h"
+#include "Helicopter.h"
 
 /* MAVLink Headers */
 #include <mavlink.h>
@@ -303,6 +304,7 @@ void QGCLink::QGCSend::send_param(std::queue<std::vector<uint8_t> > *sendq)
 	std::vector<std::vector<Parameter> > plist;
 
 	plist.push_back(Control::getInstance()->getParameters());
+	plist.push_back(Helicopter::getInstance()->getParameters());
 
 	int num_params = 0;
 	for (unsigned int i=0; i<plist.size(); i++)
@@ -357,7 +359,7 @@ void QGCLink::QGCSend::send_requested_params(std::queue<std::vector<uint8_t> > *
 
 	while(!qgc->requested_params.empty())
 	{
-		mavlink_msg_param_value_pack(100, qgc->requested_params.front().getCompID(), &msg, (const char*)(qgc->requested_params.front().getParamID().c_str()),
+		mavlink_msg_param_value_pack(qgc->uasId, qgc->requested_params.front().getCompID(), &msg, (const char*)(qgc->requested_params.front().getParamID().c_str()),
 				qgc->requested_params.front().getValue(), MAV_VAR_FLOAT, 1/*num_params*/, -1/*index*/);
 
 		buf.resize(mavlink_msg_to_send_buffer(&buf[0], &msg));

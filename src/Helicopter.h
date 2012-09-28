@@ -21,7 +21,8 @@
 #define HELICOPTER_H
 
 /* STL Headers */
-#include <iostream>	// for debugging
+#include <string>
+#include <vector>
 
 /* Boost Headers */
 #include <boost/array.hpp>
@@ -109,7 +110,19 @@ public:
   /// set a parameter value
   void setParameter(Parameter p);
 
-  static const std::string PARAM_Y_KI;
+  static const std::string PARAM_MASS;
+
+  static const std::string PARAM_MAIN_OFFSET_X;
+  static const std::string PARAM_MAIN_OFFSET_Y;
+  static const std::string PARAM_MAIN_OFFSET_Z;
+
+  static const std::string PARAM_TAIL_OFFSET_X;
+  static const std::string PARAM_TAIL_OFFSET_Y;
+  static const std::string PARAM_TAIL_OFFSET_Z;
+
+  static const std::string PARAM_INERTIA_X;
+  static const std::string PARAM_INERTIA_Y;
+  static const std::string PARAM_INERTIA_Z;
 
 private:
   /// Singleton Constructor.

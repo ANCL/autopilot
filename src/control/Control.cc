@@ -75,6 +75,9 @@ std::vector<Parameter> Control::getParameters()
 	std::vector<Parameter> translation_controller_params(translation_pid_controller().getParameters());
 	plist.insert(plist.end(), translation_controller_params.begin(), translation_controller_params.end());
 
+	std::vector<Parameter> sbf_controller_params(x_y_sbf_controller.getParameters());
+	plist.insert(plist.end(), sbf_controller_params.begin(), sbf_controller_params.end());
+
 	// append parameters from any other controllers here
 
 	// return the complete parameter list

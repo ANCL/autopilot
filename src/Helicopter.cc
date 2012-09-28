@@ -50,6 +50,41 @@ Helicopter* Helicopter::getInstance()
   return _instance;
 }
 
+const std::string Helicopter::PARAM_MASS = "Mass";
+
+const std::string Helicopter::PARAM_MAIN_OFFSET_X = "Main_X";
+const std::string Helicopter::PARAM_MAIN_OFFSET_Y = "Main_Y";
+const std::string Helicopter::PARAM_MAIN_OFFSET_Z = "Main_Z";
+
+const std::string Helicopter::PARAM_TAIL_OFFSET_X = "Tail_X";
+const std::string Helicopter::PARAM_TAIL_OFFSET_Y = "Tail_Y";
+const std::string Helicopter::PARAM_TAIL_OFFSET_Z = "Tail_Z";
+
+const std::string Helicopter::PARAM_INERTIA_X = "J_X";
+const std::string Helicopter::PARAM_INERTIA_Y = "J_Y";
+const std::string Helicopter::PARAM_INERTIA_Z = "J_Z";
+
+std::vector<Parameter> Helicopter::getParameters()
+{
+	std::vector<Parameter> plist;
+
+	plist.push_back(Parameter(PARAM_MASS, get_mass(), heli::HELICOPTER_ID));
+
+	plist.push_back(Parameter(PARAM_MAIN_OFFSET_X, get_main_hub_offset()(0), heli::HELICOPTER_ID));
+	plist.push_back(Parameter(PARAM_MAIN_OFFSET_Y, get_main_hub_offset()(1), heli::HELICOPTER_ID));
+	plist.push_back(Parameter(PARAM_MAIN_OFFSET_Z, get_main_hub_offset()(2), heli::HELICOPTER_ID));
+
+	plist.push_back(Parameter(PARAM_TAIL_OFFSET_X, get_tail_hub_offset()(0), heli::HELICOPTER_ID));
+	plist.push_back(Parameter(PARAM_TAIL_OFFSET_Y, get_tail_hub_offset()(1), heli::HELICOPTER_ID));
+	plist.push_back(Parameter(PARAM_TAIL_OFFSET_Z, get_tail_hub_offset()(2), heli::HELICOPTER_ID));
+
+	plist.push_back(Parameter(PARAM_INERTIA_X, get_inertia()(0,0), heli::HELICOPTER_ID));
+	plist.push_back(Parameter(PARAM_INERTIA_Y, get_inertia()(1,1), heli::HELICOPTER_ID));
+	plist.push_back(Parameter(PARAM_INERTIA_Z, get_inertia()(2,2), heli::HELICOPTER_ID));
+
+	return plist;
+}
+
 uint16_t Helicopter::norm2pulse(double norm, boost::array<uint16_t, 3> setpoint)
 {
         uint16_t pulse = 0;

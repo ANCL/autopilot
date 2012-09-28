@@ -289,6 +289,16 @@ void QGCLink::QGCReceive::receive()
 //						}
 					break;
 					}
+					case heli::CONTROLLER_ID:
+					{
+						std::vector<Parameter> plist(Control::getInstance()->getParameters());
+						bool param_found = false;
+						for (std::vector<Parameter>::iterator it = plist.begin(); (it != plist.end()) && (!param_found); ++it)
+						{
+
+						}
+						break;
+					}
 					}
 				}
 					break;

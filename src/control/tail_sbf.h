@@ -34,6 +34,11 @@ namespace blas = boost::numeric::ublas;
 /* Project Headers */
 #include "pid_channel.h"
 #include "ControllerInterface.h"
+#include "Parameter.h"
+
+/* STL Headers */
+#include <vector>
+#include <string>
 
 class tail_sbf : public ControllerInterface
 {
@@ -61,6 +66,18 @@ public:
 	/// set the scaled travel in radians
 	inline void set_scaled_travel_radians(double travel) {set_scaled_travel(travel*boost::math::constants::pi<double>()/180);}
 
+	/// get the parameter list
+	std::vector<Parameter> getParameters() const;
+
+	static const std::string PARAM_X_KP;
+	static const std::string PARAM_X_KD;
+	static const std::string PARAM_X_KI;
+
+	static const std::string PARAM_Y_KP;
+	static const std::string PARAM_Y_KD;
+	static const std::string PARAM_Y_KI;
+
+	static const std::string PARAM_TRAVEL;
 private:
 	/// error states in ned x,y directions
 	pid_channel ned_x, ned_y;
