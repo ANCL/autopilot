@@ -56,7 +56,7 @@ void translation_outer_pid::operator()(const blas::vector<double>& reference) th
 
 	// get ned position/velocity
 	blas::vector<double> position(imu->get_ned_position());
-	blas::matrix<double> body_rotation(IMU::euler_to_rotation(euler));
+	blas::matrix<double> body_rotation(trans(IMU::euler_to_rotation(euler)));
 	blas::vector<double> body_position_error(blas::prod(body_rotation, position - reference));
 	blas::vector<double> body_velocity_error(blas::prod(body_rotation, imu->get_ned_velocity()));
 

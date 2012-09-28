@@ -299,6 +299,7 @@ void Control::operator()()
 			{
 				translation_pid_controller()(get_reference_position());
 				blas::vector<double> roll_pitch_reference(translation_pid_controller().get_control_effort());
+				set_reference_attitude(roll_pitch_reference);
 				LogFile::getInstance()->logData(heli::LOG_PID_TRANS_ATTITUDE_REF, roll_pitch_reference);
 				attitude_pid_controller()(roll_pitch_reference);
 			}
@@ -325,6 +326,7 @@ void Control::operator()()
 			{
 				x_y_sbf_controller(get_reference_position());
 				blas::vector<double> attitude_reference(x_y_sbf_controller.get_control_effort());
+				set_reference_attitude(attitude_reference);
 				LogFile::getInstance()->logData(heli::LOG_SBF_TRANS_ATTITUDE_REF, attitude_reference);
 				attitude_pid_controller()(attitude_reference);
 			}
@@ -346,6 +348,7 @@ void Control::operator()()
 		blas::vector<double> roll_pitch_reference(2);
 		roll_pitch_reference[ROLL] = attitude_pid_controller().get_roll_trim_radians();
 		roll_pitch_reference[PITCH] = attitude_pid_controller().get_pitch_trim_radians();
+		set_reference_attitude(roll_pitch_reference);
 		attitude_pid_controller()(roll_pitch_reference);
 
 		// prevents exception being thrown
