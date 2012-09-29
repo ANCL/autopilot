@@ -125,6 +125,8 @@ public:
   static const std::string PARAM_INERTIA_Y;
   static const std::string PARAM_INERTIA_Z;
 
+  double get_main_collective() const;
+
 private:
   /// Singleton Constructor.
   Helicopter();

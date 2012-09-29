@@ -493,3 +493,15 @@ void Helicopter::parse_vector_node(rapidxml::xml_node<> *vector_node)
 				warning() << "parse_pid(): unknown xml node " << coordinate->name();
 		}
 }
+
+double Helicopter::get_main_collective() const
+{
+	uint16_t pitch_servo = servo_switch::getInstance()->getRaw(heli::CH6);
+
+	const uint16_t pitch_neutral = 1880;
+
+	if (pitch_servo < pitch_neutral)
+		return -0.017113*pitch_servo + 31.97;
+	else
+		return -0.0082034*pitch_servo + 15.349;
+}

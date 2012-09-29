@@ -143,6 +143,9 @@ public:
 	/// return the position error in the navigation frame
 	blas::vector<double> get_ned_position_error() const {return IMU::getInstance()->get_ned_position() - get_reference_position();}
 
+	/// return the current reference attitude
+	blas::vector<double> get_reference_attitude() const {boost::mutex::scoped_lock(reference_attitude_lock); return reference_attitude;}
+
 private:
 	Control();
 
@@ -242,8 +245,7 @@ private:
 	mutable boost::mutex reference_attitude_lock;
 	/// set the reference attitude
 	void set_reference_attitude(const blas::vector<double>& reference_attitude) {boost::mutex::scoped_lock(reference_attitude_lock); this->reference_attitude = reference_attitude;}
-	/// return the current reference attitude
-	blas::vector<double> get_reference_attitude() const {boost::mutex::scoped_lock(reference_attitude_lock); return reference_attitude;}
+
 
 	/// threadsafe set reference_position
 	void set_reference_position(const blas::vector<double>& position) {boost::mutex::scoped_lock lock(reference_position_lock); reference_position = position;}

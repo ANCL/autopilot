@@ -260,11 +260,23 @@ void QGCLink::QGCSend::send_position(std::queue<std::vector<uint8_t> > *sendq)
 		blas::vector<double> _ned_origin(imu->get_llh_origin());
 		std::vector<float> ned_origin(_ned_origin.begin(), _ned_origin.end());
 
+		Control *control = Control::getInstance();
+		// get reference position
+		blas::vector<double> _ref_pos(control->get_reference_position());
+		std::vector<float> ref_pos(_ref_pos.begin(), _ref_pos.end());
+		// get position error in body
+		blas::vector<double> _body_error(control->get_body_postion_error());
+		std::vector<float> body_error(_body_error.begin(), _body_error.end());
+		// get position error in ned
+		blas::vector<double> _ned_error(control->get_ned_position_error());
+		std::vector<float> ned_error(_ned_error.begin(), _ned_error.end());
+
 		mavlink_message_t msg;
 		std::vector<uint8_t> buf(MAVLINK_MAX_PACKET_LEN);
 
 		mavlink_msg_ualberta_position_pack(qgc->uasId, heli::GX3_ID, &msg,
 				&llh_pos[0], &ned_pos[0], &ned_vel[0], &ned_origin[0],
+				&ref_pos[0], &body_error[0], &ned_error[0],
 				(boost::posix_time::microsec_clock::local_time() - startTime).total_milliseconds());
 
 		buf.resize(mavlink_msg_to_send_buffer(&buf[0], &msg));
@@ -337,16 +349,15 @@ void QGCLink::QGCSend::send_attitude(std::queue<std::vector<uint8_t> > *sendq)
 	blas::vector<double> _ahrs_ang_rate(imu->get_ahrs_angular_rate());
 	std::vector<float> ahrs_ang_rate(_ahrs_ang_rate.begin(), _ahrs_ang_rate.end());
 
+	blas::vector<double> _attitude_reference(Control::getInstance()->get_reference_attitude());
+	std::vector<float> attitude_reference(_attitude_reference.begin(), _attitude_reference.end());
+
 	mavlink_message_t msg;
 	std::vector<uint8_t> buf(MAVLINK_MAX_PACKET_LEN);
 
 	mavlink_msg_ualberta_attitude_pack(qgc->uasId, heli::GX3_ID, &msg,
-			&nav_euler[0], &nav_ang_rate[0], &ahrs_euler[0], &ahrs_ang_rate[0],
+			&nav_euler[0], &nav_ang_rate[0], &ahrs_euler[0], &ahrs_ang_rate[0], &attitude_reference[0],
 			(boost::posix_time::microsec_clock::local_time() - startTime).total_milliseconds());
-
-//	mavlink_msg_attitude_pack(qgc->uasId, heli::GX3_ID, &msg,
-//			(boost::posix_time::microsec_clock::local_time() - startTime).total_milliseconds(),
-//			euler[0], euler[1], euler[2], euler_rate[0], euler_rate[1], euler_rate[2]);
 
 	buf.resize(mavlink_msg_to_send_buffer(&buf[0], &msg));
 	sendq->push(buf);
@@ -538,7 +549,7 @@ void QGCLink::QGCSend::send_status(std::queue<std::vector<uint8_t> >* sendq)
 
 	mavlink_msg_ualberta_sys_status_pack(qgc->uasId, 200, &msg,
 			qgc_servo_source, qgc_filter_state, qgc_pilot_mode, qgc_control_mode,(get_attitude_source()?UALBERTA_NAV_FILTER:UALBERTA_AHRS),
-			servo_switch::getInstance()->get_engine_rpm(), servo_switch::getInstance()->get_main_rotor_rpm(), 0, 0);
+			servo_switch::getInstance()->get_engine_rpm(), servo_switch::getInstance()->get_main_rotor_rpm(), Helicopter::getInstance()->get_main_collective(), 0, 0);
 
 	buf.resize(mavlink_msg_to_send_buffer(&buf[0], &msg));
 
