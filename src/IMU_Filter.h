@@ -20,12 +20,22 @@
 #ifndef IMU_FILTER_H_
 #define IMU_FILTER_H_
 
-#include "Filter.h"
+/* Boost Headers*/
+#include <boost/circular_buffer.hpp>
+#include <boost/array.hpp>
 
-class IMU_Filter: public Filter {
+class IMU_Filter
+{
 public:
 	IMU_Filter();
 	virtual ~IMU_Filter();
+
+	double operator()(double current_input);
+
+	void reset();
+private:
+	boost::array<double, 64> numerator_coeffs;
+	boost::circular_buffer<double> inputs;
 };
 
 #endif
