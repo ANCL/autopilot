@@ -416,6 +416,8 @@ std::string Control::getModeString(heli::Controller_Mode mode)
 		return "MODE_ATTITUDE_STABILIZATION_PID";
 	else if (mode == heli::Mode_Position_Hold_PID)
 		return "MODE_POSITION_HOLD_PID";
+	else if (mode == heli::Mode_Position_Hold_SBF)
+		return "MODE_POSITION_HOLD_SBF";
 	return std::string();
 }
 
