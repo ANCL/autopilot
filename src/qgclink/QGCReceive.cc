@@ -186,7 +186,12 @@ void QGCLink::QGCReceive::receive()
 							qgc->attitude_source(false);
 						break;
 					}
-
+					case UALBERTA_SET_REF_POS:
+					{
+						debug() << "Received set reference position message";
+						Control::getInstance()->set_reference_position();
+						break;
+					}
 					}
 					break;
 				}
