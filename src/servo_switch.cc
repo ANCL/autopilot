@@ -229,10 +229,10 @@ void servo_switch::read_serial::parse_aux_inputs(const std::vector<uint8_t>& pay
 		debug() << "Time measurement over range";
 		return ;
 	}
-	if(!meas_byte.test(6))
-	{
-		debug() << "Time measurement is not running";
-	}
+//	if(!meas_byte.test(6))
+//	{
+//		debug() << "Time measurement is not running";
+//	}
 
 	meas_byte.set(7,0);
 	meas_byte.set(6,0);

@@ -156,6 +156,9 @@ void QGCLink::QGCReceive::receive()
 						case UALBERTA_TRANSLATION_PID:
 							qgc->control_mode(heli::Mode_Position_Hold_PID);
 							break;
+						case UALBERTA_TRANSLATION_SBF:
+							qgc->control_mode(heli::Mode_Position_Hold_SBF);
+							break;
 						}
 						break;
 					}

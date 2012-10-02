@@ -497,6 +497,8 @@ void QGCLink::QGCSend::send_status(std::queue<std::vector<uint8_t> >* sendq)
 	}
 
 	heli::PILOT_MODE pilot_mode = get_pilot_mode();
+	if (pilot_mode == heli::NUM_PILOT_MODES)
+		pilot_mode = servo_switch::getInstance()->get_pilot_mode();
 	uint8_t qgc_pilot_mode = 255;
 	switch(pilot_mode)
 	{
