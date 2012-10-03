@@ -542,6 +542,9 @@ void QGCLink::QGCSend::send_status(std::queue<std::vector<uint8_t> >* sendq)
 	case heli::Mode_Position_Hold_PID:
 		qgc_control_mode = ::UALBERTA_TRANSLATION_PID;
 		break;
+	case heli::Mode_Position_Hold_SBF:
+		qgc_control_mode = ::UALBERTA_TRANSLATION_SBF;
+		break;
 	default:
 		break;
 	}
