@@ -69,14 +69,14 @@ void translation_outer_pid::operator()(const blas::vector<double>& reference) th
 		error_states.push_back(x.error().proportional() = body_position_error[0]);
 		error_states.push_back(x.error().derivative() = body_velocity_error[0]);
 		error_states.push_back(++(x.error()));
-		attitude_reference[1] = x.compute_pid();
+		attitude_reference[1] = -x.compute_pid();
 	}
 	{
 		boost::mutex::scoped_lock lock(y_lock);
 		error_states.push_back(y.error().proportional() = body_position_error[1]);
 		error_states.push_back(y.error().derivative() = body_velocity_error[1]);
 		error_states.push_back(++(y.error()));
-		attitude_reference[0] = -y.compute_pid();
+		attitude_reference[0] = y.compute_pid();
 	}
 
 	LogFile::getInstance()->logData(heli::LOG_TRANS_PID_ERROR_STATES, error_states);

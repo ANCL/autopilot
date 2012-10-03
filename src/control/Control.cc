@@ -341,6 +341,7 @@ void Control::operator()()
 			warning() <<"Control: translation sbf controller reports it is not runnable.  Switching to attitude control.";
 			set_controller_mode(heli::Mode_Attitude_Stabilization_PID);
 		}
+		return;
 	}
 	// not else if so that it will run if the mode was changed
 	if (get_controller_mode() == heli::Mode_Attitude_Stabilization_PID)
