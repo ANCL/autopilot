@@ -75,6 +75,9 @@ std::vector<Parameter> Control::getParameters()
 	std::vector<Parameter> translation_controller_params(translation_pid_controller().getParameters());
 	plist.insert(plist.end(), translation_controller_params.begin(), translation_controller_params.end());
 
+	std::vector<Parameter> sbf_controller_params(x_y_sbf_controller.getParameters());
+	plist.insert(plist.end(), sbf_controller_params.begin(), sbf_controller_params.end());
+
 	// append parameters from any other controllers here
 
 	// return the complete parameter list
@@ -122,6 +125,22 @@ void Control::setParameter(Parameter p)
 		translation_pid_controller().set_y_integral(p.getValue());
 	else if (param_id == translation_outer_pid::PARAM_TRAVEL)
 		translation_pid_controller().set_scaled_travel_degrees(p.getValue());
+
+	else if (param_id == tail_sbf::PARAM_TRAVEL)
+		x_y_sbf_controller.set_scaled_travel_degrees(p.getValue());
+	else if (param_id == tail_sbf::PARAM_X_KP)
+		x_y_sbf_controller.set_x_proportional(p.getValue());
+	else if (param_id == tail_sbf::PARAM_X_KD)
+		x_y_sbf_controller.set_x_derivative(p.getValue());
+	else if (param_id == tail_sbf::PARAM_X_KI)
+		x_y_sbf_controller.set_x_integral(p.getValue());
+	else if (param_id == tail_sbf::PARAM_Y_KP)
+		x_y_sbf_controller.set_y_proportional(p.getValue());
+	else if (param_id == tail_sbf::PARAM_Y_KD)
+		x_y_sbf_controller.set_y_derivative(p.getValue());
+	else if (param_id == tail_sbf::PARAM_Y_KI)
+		x_y_sbf_controller.set_y_integral(p.getValue());
+
 	else
 	{
 		warning() << "Control::setParameter - unknown parameter: " << p;
@@ -196,7 +215,7 @@ void Control::set_pitch_mix(double pitch_mix)
 
 void Control::loadFile()
 {
-	if (!boost::filesystem::exists(heli::calibration_filename))
+	if (!boost::filesystem::exists(heli::controller_param_filename))
 	{
 		warning() << __FILE__ << __LINE__ << "Cannot find controller parameter xml file: " << heli::controller_param_filename;
 		return;
@@ -238,6 +257,8 @@ void Control::loadFile()
 			attitude_pid_controller().parse_pid(node);
 		else if (std::string(node_name) == "translation_outer_pid")
 			translation_pid_controller().parse_xml_node(node);
+		else if (std::string(node_name) == "translation_outer_sbf")
+			x_y_sbf_controller.parse_xml_node(node);
 		else
 			warning() << __FILE__ << __LINE__ << "Found unknown node: " << node_name;
 	}
@@ -278,7 +299,8 @@ void Control::operator()()
 			{
 				translation_pid_controller()(get_reference_position());
 				blas::vector<double> roll_pitch_reference(translation_pid_controller().get_control_effort());
-				LogFile::getInstance()->logData(heli::LOG_TRANS_ATTITUDE_REF, roll_pitch_reference);
+				set_reference_attitude(roll_pitch_reference);
+				LogFile::getInstance()->logData(heli::LOG_PID_TRANS_ATTITUDE_REF, roll_pitch_reference);
 				attitude_pid_controller()(roll_pitch_reference);
 			}
 			catch (bad_control& bc)
@@ -289,11 +311,36 @@ void Control::operator()()
 		}
 		else
 		{
-			warning() <<"Control: translation controller reports it is not runnable.  Switching to attitude control.";
+			warning() <<"Control: translation pid controller reports it is not runnable.  Switching to attitude control.";
 			set_controller_mode(heli::Mode_Attitude_Stabilization_PID);
 		}
 
 		// prevents exception being thrown
+		return;
+	}
+	else if (get_controller_mode() == heli::Mode_Position_Hold_SBF)
+	{
+		if (x_y_sbf_controller.runnable())
+		{
+			try
+			{
+				x_y_sbf_controller(get_reference_position());
+				blas::vector<double> attitude_reference(x_y_sbf_controller.get_control_effort());
+				set_reference_attitude(attitude_reference);
+				LogFile::getInstance()->logData(heli::LOG_SBF_TRANS_ATTITUDE_REF, attitude_reference);
+				attitude_pid_controller()(attitude_reference);
+			}
+			catch (bad_control& bc)
+			{
+				warning() << "Caught exception from Translation SBF Controller, switching to attitude stabilization.";
+				set_controller_mode(heli::Mode_Attitude_Stabilization_PID);
+			}
+		}
+		else
+		{
+			warning() <<"Control: translation sbf controller reports it is not runnable.  Switching to attitude control.";
+			set_controller_mode(heli::Mode_Attitude_Stabilization_PID);
+		}
 		return;
 	}
 	// not else if so that it will run if the mode was changed
@@ -302,6 +349,7 @@ void Control::operator()()
 		blas::vector<double> roll_pitch_reference(2);
 		roll_pitch_reference[ROLL] = attitude_pid_controller().get_roll_trim_radians();
 		roll_pitch_reference[PITCH] = attitude_pid_controller().get_pitch_trim_radians();
+		set_reference_attitude(roll_pitch_reference);
 		attitude_pid_controller()(roll_pitch_reference);
 
 		// prevents exception being thrown
@@ -323,6 +371,10 @@ void Control::saveFile()
 	/* get trans pid params */
 	rapidxml::xml_node<> *trans_pid_node = translation_pid_controller().get_xml_node(config_file_xml);
 	root_node->append_node(trans_pid_node);
+
+	/* get sbf params */
+	rapidxml::xml_node<> *sbf_pid_node = x_y_sbf_controller.get_xml_node(config_file_xml);
+	root_node->append_node(sbf_pid_node);
 
 	/* add pilot mixes */
 	rapidxml::xml_node<> *node = NULL;
@@ -362,9 +414,11 @@ void Control::saveFile()
 std::string Control::getModeString(heli::Controller_Mode mode)
 {
 	if (mode == heli::Mode_Attitude_Stabilization_PID)
-		return "MODE_ATTITUDE_STABILIZATION_PID";
+		return "ATTITUDE_PID";
 	else if (mode == heli::Mode_Position_Hold_PID)
-		return "MODE_POSITION_HOLD_PID";
+		return "POSITION_PID";
+	else if (mode == heli::Mode_Position_Hold_SBF)
+		return "POSITION_SBF";
 	return std::string();
 }
 

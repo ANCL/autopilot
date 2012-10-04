@@ -21,27 +21,33 @@
 #define HELICOPTER_H
 
 /* STL Headers */
-#include <iostream>	// for debugging
+#include <string>
+#include <vector>
 
 /* Boost Headers */
 #include <boost/array.hpp>
 #include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/banded.hpp>
 namespace blas = boost::numeric::ublas;
+#include <boost/thread.hpp>
 
 /* Project Headers */
 #include "servo_switch.h"
 #include "RadioCalibration.h"
 #include "RCTrans.h"
 #include "heli.h"
+#include "Parameter.h"
+#include "Debug.h"
 
 /**
     \brief This class handles output pulse scaling from normalized values
     based on calibration data from RadioCalibration.
 
-    \author Hasitha Senanayake <senanaya@ualberta.ca>
     \author Bryan Godbolt <godbolt@ece.ualberta.ca>
+    \author Hasitha Senanayake <senanaya@ualberta.ca>
     \date July 14, 2011: Created class
-
+    @date February 2012: Refactored to use boost ublas types
+    @date September 27, 2012: Added physical parameters
 */
 
 class Helicopter
@@ -88,6 +94,39 @@ public:
   /** @param norm vector of scaled pulse values for all 6 channels
    	   @return pulse vector of de-normalized pulse values for all 6 channels */
   std::vector<uint16_t> setScaled(std::vector<double> norm);
+
+  /// get the helicopter's mass
+  double get_mass() const {boost::mutex::scoped_lock(mass_lock); return mass;}
+  /// get gravity
+  double get_gravity() const {return gravity;}
+  /// return the main rotor hub offset
+  blas::vector<double> get_main_hub_offset() const {boost::mutex::scoped_lock(main_hub_offset_lock); return main_hub_offset;}
+  /// return the tail rotor hub offset
+  blas::vector<double> get_tail_hub_offset() const {boost::mutex::scoped_lock(tail_hub_offset_lock); return tail_hub_offset;}
+  /// return the inertia matrix
+  blas::banded_matrix<double> get_inertia() const {boost::mutex::scoped_lock(inertia_lock); return inertia;}
+
+  /// get a list of helicopter parameters
+  std::vector<Parameter> getParameters();
+  /// set a parameter value
+  void setParameter(Parameter p);
+
+  static const std::string PARAM_MASS;
+
+  static const std::string PARAM_MAIN_OFFSET_X;
+  static const std::string PARAM_MAIN_OFFSET_Y;
+  static const std::string PARAM_MAIN_OFFSET_Z;
+
+  static const std::string PARAM_TAIL_OFFSET_X;
+  static const std::string PARAM_TAIL_OFFSET_Y;
+  static const std::string PARAM_TAIL_OFFSET_Z;
+
+  static const std::string PARAM_INERTIA_X;
+  static const std::string PARAM_INERTIA_Y;
+  static const std::string PARAM_INERTIA_Z;
+
+  double get_main_collective() const;
+
 private:
   /// Singleton Constructor.
   Helicopter();
@@ -124,6 +163,66 @@ private:
     GYRO,
     PITCH
   };
+
+  /// helicopter mass (kg)
+  double mass;
+  /// serialize access to mass
+  mutable boost::mutex mass_lock;
+  /// set the mass
+  inline void set_mass(const double mass) {{boost::mutex::scoped_lock(mass_lock); this->mass = mass;} message() << "Mass set to " << mass;}
+
+  /// acceleration due to gravity (m/s^2)
+  const double gravity;
+
+  /// main rotor hub offset from com (m)
+  blas::vector<double> main_hub_offset;
+  /// serialize access to main_hub_offset
+  mutable boost::mutex main_hub_offset_lock;
+  /// set the main rotor hub offset
+  inline void set_main_hub_offset(const blas::vector<double>& main_hub_offset) {boost::mutex::scoped_lock(main_hub_offset_lock); this->main_hub_offset = main_hub_offset;}
+  /// set the body x main_hub_offset
+  inline void set_main_hub_offset_x(const double& main_hub_offset_x) {{boost::mutex::scoped_lock(main_hub_offset_lock); main_hub_offset(0) = main_hub_offset_x;} message() << "Main Hub Offset x set to " << main_hub_offset_x;}
+  /// set the body y main_hub_offset
+  inline void set_main_hub_offset_y(const double& main_hub_offset_y) {{boost::mutex::scoped_lock(main_hub_offset_lock); main_hub_offset(1) = main_hub_offset_y;} message() << "Main Hub Offset y set to " << main_hub_offset_y;}
+  /// set the body z main_hub_offset
+  inline void set_main_hub_offset_z(const double& main_hub_offset_z) {{boost::mutex::scoped_lock(main_hub_offset_lock); main_hub_offset(2) = main_hub_offset_z;} message() << "Main Hub Offset z set to " << main_hub_offset_z;}
+
+  /// tail rotor hub offset from com (m)
+  blas::vector<double> tail_hub_offset;
+  /// serialize access to tail_hub_offset
+  mutable boost::mutex tail_hub_offset_lock;
+  /// set the tail rotor hub offset
+  inline void set_tail_hub_offset(const blas::vector<double>& tail_hub_offset) {boost::mutex::scoped_lock(tail_hub_offset_lock); this->tail_hub_offset = tail_hub_offset;}
+  /// set the body x tail_hub_offset
+  inline void set_tail_hub_offset_x(const double& tail_hub_offset_x) {{boost::mutex::scoped_lock(tail_hub_offset_lock); tail_hub_offset(0) = tail_hub_offset_x;} message() << "Tail Hub Offset x set to " << tail_hub_offset_x;}
+  /// set the body y tail_hub_offset
+  inline void set_tail_hub_offset_y(const double& tail_hub_offset_y) {{boost::mutex::scoped_lock(tail_hub_offset_lock); tail_hub_offset(1) = tail_hub_offset_y;} message() << "Tail Hub Offset y set to " << tail_hub_offset_y;}
+  /// set the body z tail_hub_offset
+  inline void set_tail_hub_offset_z(const double& tail_hub_offset_z) {{boost::mutex::scoped_lock(tail_hub_offset_lock); tail_hub_offset(2) = tail_hub_offset_z;} message() << "Tail Hub Offset z set to " << tail_hub_offset_z;}
+
+  /// inertia matrix
+  blas::banded_matrix<double> inertia;
+  /// serialize access to inertia
+  mutable boost::mutex inertia_lock;
+  /// set the inertia matrix
+  inline void set_inertia(const blas::banded_matrix<double>& inertia) {boost::mutex::scoped_lock(inertia_lock); this->inertia = inertia;}
+  /// set the inertia in the body x
+  inline void set_inertia_x(const double& jx) {{boost::mutex::scoped_lock(inertia_lock); inertia(0,0) = jx;} message() << "Inertia x set to " << jx;}
+  /// set the inertia in the body y
+  inline void set_inertia_y(const double& jy) {{boost::mutex::scoped_lock(inertia_lock); inertia(1,1) = jy;} message() << "Inertia y set to " << jy;}
+  /// set the inertia in the body z
+  inline void set_inertia_z(const double& jz) {{boost::mutex::scoped_lock(inertia_lock); inertia(2,2) = jz;} message() << "Inertia z set to " << jz;}
+
+  ///Serializes access to the controller parameter file
+  mutable boost::mutex config_file_lock;
+  /// Save the configuration to the file heli::physical_param_filename
+  void saveFile() const;
+  /// load the parameters stored in the configuration file heli::physical_param_filename
+  void loadFile();
+  /// parse a vector xml node
+  void parse_vector_node(rapidxml::xml_node<> *vector_node);
+  /// pasrse a scalar xml node
+  void parse_scalar_node(rapidxml::xml_node<> *scalar_node);
 
 };
 

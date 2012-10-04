@@ -57,7 +57,7 @@ public:
 	 */
 	virtual void operator()(const blas::vector<double>& reference) throw(bad_control) = 0;
 	/**
-	 * Return the control effort.  This function does not acutally compute the control
+	 * Return the control effort.  This function does not actually compute the control
 	 * (i.e., integrate any states) since it may be called several times per timestep.
 	 * @returns current control effort
 	 */

@@ -104,17 +104,20 @@ void attitude_pid::operator()(const blas::vector<double>& reference) throw(bad_c
 	blas::vector<double> control_effort(2);
 	control_effort.clear();
 
+	std::vector<double> error_states;
 	roll_lock.lock();
-	roll.error().proportional() = euler_error[0];
-	roll.error().derivative() = euler_rate[0];
-	++roll.error();
+	error_states.push_back(roll.error().proportional() = euler_error[0]);
+	error_states.push_back(roll.error().derivative() = euler_rate[0]);
+	error_states.push_back(++roll.error());
 	control_effort[0] = roll.compute_pid();
 	roll_lock.unlock();
 
 	pitch_lock.lock();
-	pitch.error().proportional() = euler_error[1];
-	pitch.error().derivative() = euler_rate[1];
-	++pitch.error();
+	error_states.push_back(pitch.error().proportional() = euler_error[1]);
+	error_states.push_back(pitch.error().derivative() = euler_rate[1]);
+	error_states.push_back(++pitch.error());
+
+	LogFile::getInstance()->logData(heli::LOG_ATTITUDE_ERROR, error_states);
 	control_effort[1] = pitch.compute_pid();
 	pitch_lock.unlock();
 
@@ -122,7 +125,7 @@ void attitude_pid::operator()(const blas::vector<double>& reference) throw(bad_c
 	Control::saturate(control_effort);
 	set_control_effort(control_effort);
 
-	LogFile::getInstance()->logData("Attitude PID control effort", control_effort);
+	LogFile::getInstance()->logData(heli::LOG_ATTITUDE_CONTROL_EFFORT, control_effort);
 //	debug() << "Attitude PID control effort: " << control_effort;
 }
 

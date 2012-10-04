@@ -203,10 +203,15 @@ void servo_switch::read_serial::parse_message(uint8_t id, const std::vector<uint
 
 void servo_switch::read_serial::parse_pulse_inputs(const std::vector<uint8_t>& payload)
 {
-	std::vector<uint16_t> pulse_inputs(9, 0);  // no need for more than 9 channels
+	const uint16_t upper_limit = 2200;
+	const uint16_t lower_limit = 800;
+	std::vector<uint16_t> pulse_inputs(getInstance()->get_raw_inputs());  // no need for more than 9 channels
+	uint16_t pulse_width = 0;
 	for (uint_t i=1; i<payload.size()/2 && i < pulse_inputs.size(); i++)
 	{
-		pulse_inputs[i-1] = (static_cast<uint16_t>(payload[i*2]) << 8) + payload[i*2+1];
+		pulse_width = (static_cast<uint16_t>(payload[i*2]) << 8) + payload[i*2+1];
+		if (pulse_width > lower_limit && pulse_width < upper_limit)
+			pulse_inputs[i-1] = pulse_width;
 	}
 	// treat ch8 differently
 	pulse_inputs[7] = (static_cast<uint16_t>(payload[0]) << 8) + payload[1];

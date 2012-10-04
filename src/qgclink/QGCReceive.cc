@@ -23,6 +23,7 @@
 #include "Control.h"
 #include "IMU.h"
 #include "RadioCalibration.h"
+#include "Helicopter.h"
 
 /* Mavlink Headers */
 #include "mavlink.h"
@@ -155,6 +156,9 @@ void QGCLink::QGCReceive::receive()
 						case UALBERTA_TRANSLATION_PID:
 							qgc->control_mode(heli::Mode_Position_Hold_PID);
 							break;
+						case UALBERTA_TRANSLATION_SBF:
+							qgc->control_mode(heli::Mode_Position_Hold_SBF);
+							break;
 						}
 						break;
 					}
@@ -185,7 +189,14 @@ void QGCLink::QGCReceive::receive()
 							qgc->attitude_source(false);
 						break;
 					}
-
+					case UALBERTA_SET_REF_POS:
+					{
+						debug() << "Received set reference position message";
+						Control* control = Control::getInstance();
+						control->set_reference_position();
+						control->reset();
+						break;
+					}
 					}
 					break;
 				}
@@ -244,7 +255,6 @@ void QGCLink::QGCReceive::receive()
 						{
 						case heli::CONTROLLER_ID:
 						{
-							debug() << "QGCLink: Received component id = Controller id.";
 							Control *control = Control::getInstance();
 							control->setParameter(Parameter(std::string((const char*)(set.param_id)), set.param_value));
 							std::vector<Parameter> plist = control->getParameters();
@@ -259,6 +269,24 @@ void QGCLink::QGCReceive::receive()
 							}
 							break;
 						}
+						case heli::HELICOPTER_ID:
+						{
+							Helicopter* bergen = Helicopter::getInstance();
+							bergen->setParameter(Parameter(std::string((const char*)(set.param_id)), set.param_value));
+							std::vector<Parameter> plist(bergen->getParameters());
+							bool param_found = false;
+							for (std::vector<Parameter>::iterator it = plist.begin(); it != plist.end() && !param_found; ++it)
+							{
+								if ((*it).getParamID() == (const char*)(set.param_id))
+								{
+									boost::mutex::scoped_lock lock(qgc->requested_params_lock);
+									qgc->requested_params.push(Parameter((*it).getParamID(), (*it).getValue(), heli::HELICOPTER_ID));
+									debug() << __FILE__ << __LINE__ << "Sending Parameter: " << (*it);
+									param_found = true;
+								}
+							}
+							break;
+						}
 						default:
 							warning() << "QGCLink: Received component id cannot be mapped to an on-board component.";
 							break;
@@ -268,7 +296,7 @@ void QGCLink::QGCReceive::receive()
 				}
 				case MAVLINK_MSG_ID_PARAM_REQUEST_READ:		// read a single parameter on the list.
 				{
-					debug() << "QGCReceive: received param read request.";
+//					debug() << "QGCReceive: received param read request.";
 
 					mavlink_param_request_read_t set;
 					mavlink_msg_param_request_read_decode(&msg, &set);
@@ -288,6 +316,50 @@ void QGCLink::QGCReceive::receive()
 //							}
 //						}
 					break;
+					}
+					case heli::CONTROLLER_ID:
+					{
+						std::vector<Parameter> plist(Control::getInstance()->getParameters());
+
+//						debug() << "Searching for controller param with index: " << set.param_index << "from list size: " << plist.size();
+						if (set.param_index >= 0)
+						{
+							uint index = set.param_index;
+							if (index < plist.size())
+							{
+//								debug() << "sending parameter: " << plist[index];
+								qgc->requested_params.push(plist[index]);
+							}
+						}
+						else
+						{
+							bool param_found = false;
+							for (std::vector<Parameter>::iterator it = plist.begin(); (it != plist.end()) && (!param_found); ++it)
+							{
+								if (it->getParamID() == (const char*)(set.param_id))
+								{
+									boost::mutex::scoped_lock lock(qgc->requested_params_lock);
+									qgc->requested_params.push(Parameter(it->getParamID(), it->getValue(), heli::CONTROLLER_ID));
+									param_found = true;
+								}
+							}
+						}
+						break;
+					}
+					case heli::HELICOPTER_ID:
+					{
+						std::vector<Parameter> plist(Helicopter::getInstance()->getParameters());
+						bool param_found = false;
+						for (std::vector<Parameter>::iterator it = plist.begin(); (it != plist.end()) && (!param_found); ++it)
+						{
+							if (it->getParamID() == (const char*)(set.param_id))
+							{
+								boost::mutex::scoped_lock lock(qgc->requested_params_lock);
+								qgc->requested_params.push(Parameter(it->getParamID(), it->getValue(), heli::HELICOPTER_ID));
+								param_found = true;
+							}
+						}
+						break;
 					}
 					}
 				}

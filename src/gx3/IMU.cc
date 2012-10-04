@@ -261,7 +261,7 @@ blas::matrix<double> IMU::euler_to_rotation(const blas::vector<double>& euler)
 	rot(2, 1) = -cos(yaw)*sin(roll)+sin(yaw)*sin(pitch)*cos(roll);
 	rot(2, 2) = cos(pitch)*cos(roll);
 
-	return rot;
+	return trans(rot);
 }
 
 void IMU::set_ned_origin(const blas::vector<double>& origin)

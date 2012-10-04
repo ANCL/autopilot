@@ -1,0 +1,19 @@
+<physical_params>
+	<scalar name="mass">13.800000190734865</scalar>
+	<vector name="main_hub_offset">
+		<coordinate name="x">0</coordinate>
+		<coordinate name="y">0</coordinate>
+		<coordinate name="z">-0.32000000000000001</coordinate>
+	</vector>
+	<vector name="tail_hub_offset">
+		<coordinate name="x">-1.0600000000000001</coordinate>
+		<coordinate name="y">0</coordinate>
+		<coordinate name="z">0</coordinate>
+	</vector>
+	<vector name="inertia">
+		<coordinate name="x">0.36000001430511475</coordinate>
+		<coordinate name="y">1.48</coordinate>
+		<coordinate name="z">1.21</coordinate>
+	</vector>
+</physical_params>
+
