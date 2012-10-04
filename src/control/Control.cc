@@ -449,6 +449,7 @@ void Control::reset()
 {
 	x_y_pid_controller.reset();
 	roll_pitch_pid_controller.reset();
+	x_y_sbf_controller.reset();
 }
 
 bool Control::runnable() const
