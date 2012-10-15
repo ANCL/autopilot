@@ -19,6 +19,12 @@
 
 #include "pid_channel.h"
 
+pid_channel::pid_channel(double integrator_limit)
+:_error(integrator_limit)
+{
+
+}
+
 double pid_channel::compute_pid()
 {
 	return - gains().proportional() * error().proportional() - gains().derivative() * error().derivative() - gains().integral() * error().integral();

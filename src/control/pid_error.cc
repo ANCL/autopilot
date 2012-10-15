@@ -23,8 +23,8 @@
 #include <math.h>
 
 
-pid_error::pid_error()
-:_integral_error_limit(1)
+pid_error::pid_error(double integral_error_limit)
+:_integral_error_limit(integral_error_limit)
 {
 	error.assign(0);
 }

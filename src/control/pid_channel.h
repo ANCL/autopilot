@@ -30,10 +30,12 @@
  * @author Bryan Godbolt <godbolt@ece.ualberta.ca>
  * @date October 27, 2011: Class creation
  * @date February 10, 2012: Refactor out of Control
+ * @date October 15, 2012: Added constructor to allow setting integrator reset limit
  */
 class pid_channel
 {
 public:
+	pid_channel(double integrator_limit = 1);
 	/**
 	 * @returns gains as lvalue
 	 */

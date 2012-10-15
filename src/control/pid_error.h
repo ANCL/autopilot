@@ -41,7 +41,7 @@ public:
 	/**
 	 * Initializes error to all zeros
 	 */
-	pid_error();
+	pid_error(double integral_error_limit = 1);
 	/**
 	 * @returns proportional error as lvalue
 	 */

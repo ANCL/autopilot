@@ -34,7 +34,8 @@ const std::string attitude_pid::PARAM_ROLL_TRIM = "TRIM_ROLL";
 const std::string attitude_pid::PARAM_PITCH_TRIM = "TRIM_PITCH";
 
 attitude_pid::attitude_pid()
-:
+:roll(5),
+ pitch(5),
  control_effort(blas::zero_vector<double>(2)),
  roll_trim(0),
  pitch_trim(0),
