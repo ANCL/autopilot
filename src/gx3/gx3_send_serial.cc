@@ -188,7 +188,7 @@ void IMU::send_serial::set_filter_parameters()
 	std::vector<uint8_t> vehicle;
 	vehicle += 0x0F, 0x12, 0x01;
 	{
-		std::vector<uint8_t> x(float_to_raw(0.052f)), y(float_to_raw(0.0f)), z(float_to_raw(-0.213f));
+		std::vector<uint8_t> x(float_to_raw(0.052f)), y(float_to_raw(0.0f)), z(float_to_raw(-0.30f));
 		vehicle.insert(vehicle.end(), x.begin(), x.end());
 		vehicle.insert(vehicle.end(), y.begin(), y.end());
 		vehicle.insert(vehicle.end(), z.begin(), z.end());
@@ -199,7 +199,7 @@ void IMU::send_serial::set_filter_parameters()
 	std::vector<uint8_t> antenna;
 	antenna += 0x0F, 0x13, 0x01;
 	{
-		std::vector<uint8_t> x(float_to_raw(-0.94f)), y(float_to_raw(-0.05f)), z(float_to_raw(-0.373f));
+		std::vector<uint8_t> x(float_to_raw(-0.24f)), y(float_to_raw(-0.05f)), z(float_to_raw(-0.473f));
 		antenna.insert(antenna.end(), x.begin(), x.end());
 		antenna.insert(antenna.end(), y.begin(), y.end());
 		antenna.insert(antenna.end(), z.begin(), z.end());
