@@ -32,7 +32,7 @@
 Control::Control()
 :pilot_mix(6,1), // fill pilot_mix with 1s
  config_file_buffer(NULL),
- controller_mode(heli::Num_Controller_Modes),
+ controller_mode(heli::Mode_Position_Hold_PID),
  mode_connection(QGCLink::getInstance()->control_mode.connect(
 		 boost::bind(&Control::set_controller_mode, this, _1))),
  reference_position(3)
