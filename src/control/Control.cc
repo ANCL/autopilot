@@ -35,7 +35,8 @@ Control::Control()
  controller_mode(heli::Mode_Position_Hold_PID),
  mode_connection(QGCLink::getInstance()->control_mode.connect(
 		 boost::bind(&Control::set_controller_mode, this, _1))),
- reference_position(3)
+ reference_position(3),
+ trajectory_type(heli::Point_Trajectory)
 {
 	// load config file
 	loadFile();
@@ -422,10 +423,26 @@ std::string Control::getModeString(heli::Controller_Mode mode)
 	return std::string();
 }
 
+std::string Control::getTrajectoryString(heli::Trajectory_Type trajectory_type)
+{
+	switch(trajectory_type)
+	{
+	case heli::Point_Trajectory:
+		return "POSITION_HOLD";
+	case heli::Line_Trajectory:
+		return "LINE_TRAJECTORY";
+	case heli::Circle_Trajectory:
+		return "Circle_Trajectory";
+	default:
+		return "Unknown Trajectory type";
+	}
+}
+
 void Control::set_reference_position()
 {
 	blas::vector<double> reference(IMU::getInstance()->get_ned_position());
 	set_reference_position(reference);
+	reset();
 	message() << "Control: Position reference set to: " << reference;
 }
 void Control::set_controller_mode(heli::Controller_Mode mode)
@@ -450,6 +467,7 @@ void Control::reset()
 	x_y_pid_controller.reset();
 	roll_pitch_pid_controller.reset();
 	x_y_sbf_controller.reset();
+	line_trajectory.reset();
 }
 
 bool Control::runnable() const
@@ -458,3 +476,33 @@ bool Control::runnable() const
 	return attitude_pid_controller().runnable();
 }
 
+blas::vector<double> Control::get_reference_position() const
+{
+	if (get_trajectory_type() == heli::Line_Trajectory)
+	{
+		return line_trajectory.get_reference_position();
+	}
+	else //(get_trajectory_type() == heli::Point_Trajectory)
+	{
+		boost::mutex::scoped_lock lock(reference_position_lock);
+		return reference_position;
+	}
+}
+
+void Control::set_trajectory_type(const heli::Trajectory_Type trajectory_type)
+{
+	bool type_changed = false;
+	if (trajectory_type < heli::Num_Trajectories)
+	{
+		boost::mutex::scoped_lock(trajectory_type_lock);
+		if (this->trajectory_type != trajectory_type)
+		{
+			type_changed = true;
+			this->trajectory_type = trajectory_type;
+		}
+	}
+	if (type_changed)
+	{
+		warning() << "Trajectory type changed to: " << getTrajectoryString(trajectory_type);
+	}
+}

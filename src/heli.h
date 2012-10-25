@@ -154,6 +154,14 @@ enum Controller_Mode
 	Num_Controller_Modes
 };
 
+enum Trajectory_Type
+{
+	Point_Trajectory,
+	Line_Trajectory,
+	Circle_Trajectory,
+	Num_Trajectories
+};
+
 enum GPS_MODE
 {
 	MODE_GPS_UNINITIALIZED,

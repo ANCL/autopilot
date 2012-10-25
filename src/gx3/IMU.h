@@ -95,6 +95,8 @@ public:
 	inline blas::vector<double> get_velocity() const {boost::mutex::scoped_lock lock(velocity_lock); return velocity;}
 	/// get rotation matrix depending on use_nav_attitude
 	inline blas::matrix<double> get_rotation() const {return euler_to_rotation(get_euler());}
+	/// get the rotation matrix for the heading angle only (body->navigation)
+	blas::matrix<double> get_heading_rotation() const;
 	/// threadsafe get rotation
 	inline blas::matrix<double> get_nav_rotation() const {boost::mutex::scoped_lock lock(nav_rotation_lock); return nav_rotation;}
 	/// get the euler angles depending on use_nav_attitude

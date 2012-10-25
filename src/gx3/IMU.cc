@@ -264,6 +264,20 @@ blas::matrix<double> IMU::euler_to_rotation(const blas::vector<double>& euler)
 	return trans(rot);
 }
 
+blas::matrix<double> IMU::get_heading_rotation() const
+{
+	double heading = get_euler()(2);
+	blas::matrix<double> Rz(3,3);
+	Rz.clear();
+	Rz(0,0) = cos(heading);
+	Rz(0,1) = -sin(heading);
+	Rz(1,0) = sin(heading);
+	Rz(1,1) = cos(heading);
+	Rz(2,2) = 1;
+
+	return Rz;
+}
+
 void IMU::set_ned_origin(const blas::vector<double>& origin)
 {
 	{

@@ -30,6 +30,7 @@
 #include "ControllerInterface.h"
 #include "tail_sbf.h"
 #include "IMU.h"
+#include "line.h"
 
 /* Boost Headers */
 #include <boost/numeric/ublas/vector.hpp>
@@ -134,8 +135,8 @@ public:
 	/// threadsafe get controller mode
 	inline heli::Controller_Mode get_controller_mode() const {boost::mutex::scoped_lock lock(controller_mode_lock); return controller_mode;}
 
-	/// threadsafe access reference_position
-	blas::vector<double> get_reference_position() const {boost::mutex::scoped_lock lock(reference_position_lock); return reference_position;}
+	/// threadsafe access reference_position depending on trajectory type
+	blas::vector<double> get_reference_position() const;
 
 	/// return the difference between the current position and the reference position in the body frame
 	blas::vector<double> get_body_postion_error() const {return prod(trans(IMU::getInstance()->get_rotation()), get_ned_position_error());}
@@ -250,6 +251,20 @@ private:
 	/// threadsafe set reference_position
 	void set_reference_position(const blas::vector<double>& position) {boost::mutex::scoped_lock lock(reference_position_lock); reference_position = position;}
 
+	/// store the current trajectory type
+	heli::Trajectory_Type trajectory_type;
+	/// serialize access to trajectory type
+	mutable boost::mutex trajectory_type_lock;
+	/// set trajectory type
+	void set_trajectory_type(const heli::Trajectory_Type trajectory_type);
+	/// get the trajectory type
+	heli::Trajectory_Type get_trajectory_type() const {boost::mutex::scoped_lock(trajectory_type_lock); return trajectory_type;}
+
+	/// line trajectory generator
+	line line_trajectory;
+
+	/// convert a trajectoy type to a sting for logging
+	static std::string getTrajectoryString(heli::Trajectory_Type trajectory_type);
 };
 
 template <typename ContainerType>
