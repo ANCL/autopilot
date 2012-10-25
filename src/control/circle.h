@@ -60,6 +60,15 @@ protected:
 	/// get the start_location
 	blas::vector<double> get_start_location() const {boost::mutex::scoped_lock(start_location_lock); return start_location;}
 
+	/// position of center of circle
+	blas::vector<double> center_location;
+	/// serialize access to center_location
+	mutable boost::mutex center_location_lock;
+	/// set the center location based on the current start_location, radius, and heading
+	void set_center_location();
+	/// get the center location
+	blas::vector<double> get_center_location() const {boost::mutex::scoped_lock lock(center_location_lock); return center_location;}
+
 	/// average speed to fly trajectory in m/s
 	double speed;
 	/// serialize access to speed
@@ -87,8 +96,17 @@ protected:
 	/// get the start_Time
 	boost::posix_time::ptime get_start_time() const {boost::mutex::scoped_lock lock(start_time_lock); return start_time;}
 
-	/// return trajectory length
-	double get_distance() const;
+	/// initial angle (where the helicopter started in polar)
+	double initial_angle;
+	/// serialize access to initial_angle
+	mutable boost::mutex initial_angle_lock;
+	/// set the initial angle
+	void set_initial_angle(const double initial_angle) {boost::mutex::scoped_lock lock(initial_angle_lock); this->initial_angle = initial_angle;}
+	/// get the initial angle
+	double get_initial_angle() const {boost::mutex::scoped_lock lock(initial_angle_lock); return initial_angle;}
+
+	/// return circumference of the circular trajectory
+	double get_circumference() const;
 };
 
 #endif /* CIRCLE_H_ */

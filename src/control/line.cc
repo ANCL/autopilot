@@ -26,7 +26,9 @@
 #include "IMU.h"
 
 line::line()
-: hover_time(0)
+: start_location(blas::zero_vector<double>(3)),
+  end_location(blas::zero_vector<double>(3)),
+  hover_time(0)
 {
 
 
