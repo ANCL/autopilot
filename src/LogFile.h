@@ -136,23 +136,6 @@ class LogFile
   */
   void logHeader(const std::string& name, const std::string& header);
 
-//  /**
-//     Appends data in a vector to a log file
-//     \param name log file to append data to
-//     \param data vector of data to append
-//  */
-//  template<typename T>
-//    void logData(const std::string& name, const std::vector<T>& data);
-//  /**
-//   * Appends data in a boost::array to a log file
-//   * @note the same log file can be appended with either
-//   * std::vector or boost::aray data
-//   * @param name name of log file to append data to
-//   * @param data with data to append
-//   */
-//  template<typename T, std::size_t N>
-//  void logData(const std::string& name, const boost::array<T,N>& data);
-
   /**
    * Template log function which logs any data container that supports
    * const iterators
@@ -251,45 +234,6 @@ class LogFile
   };
 };
 
-//template<typename T>
-//void LogFile::logData(const std::string& name, const std::vector<T>& data)
-//{
-//  std::stringstream *dataStr = new std::stringstream();
-//
-//  boost::posix_time::ptime time(boost::posix_time::microsec_clock::local_time());
-//  *dataStr << ((time-startTime).total_milliseconds()) << '\t';
-//  if (data.size() > 0)
-//  {
-//	  for (unsigned int i=0; i<(data.size()); ++i)
-//		  *dataStr << boost::lexical_cast<std::string>(data[i]) << '\t';
-//  }
-//  *dataStr << std::endl;
-//  {
-//	  boost::mutex::scoped_lock(this->logMutex);
-//  	  (*log)[name].push(dataStr->str());
-//  }
-//  delete dataStr;
-//}
-//
-//template<typename T, std::size_t N>
-//void LogFile::logData(const std::string& name, const boost::array<T,N>& data)
-//{
-//  std::stringstream *dataStr = new std::stringstream();
-//
-//  boost::posix_time::ptime time(boost::posix_time::microsec_clock::local_time());
-//  *dataStr << ((time-startTime).total_milliseconds()) << '\t';
-//  if (data.size() > 0)
-//  {
-//	  for (unsigned int i=0; i<(data.size()); ++i)
-//		  *dataStr << boost::lexical_cast<std::string>(data[i]) << '\t';
-//  }
-//  *dataStr << std::endl;
-//  {
-//	  boost::mutex::scoped_lock(this->logMutex);
-//  	  (*log)[name].push(dataStr->str());
-//  }
-//  delete dataStr;
-//}
 
 template<typename DataContainer>
 void LogFile::logData(const std::string& name, const DataContainer& data)
