@@ -291,6 +291,8 @@ void Control::parse_mode(rapidxml::xml_node<> *mode)
 
 void Control::operator()()
 {
+	blas::vector<double> reference_position(get_reference_position());
+	LogFile::getInstance()->logData(heli::LOG_POSITION_REFERENCE, reference_position);
 
 	if (get_controller_mode() == heli::Mode_Position_Hold_PID)
 	{
@@ -298,7 +300,7 @@ void Control::operator()()
 		{
 			try
 			{
-				translation_pid_controller()(get_reference_position());
+				translation_pid_controller()(reference_position);
 				blas::vector<double> roll_pitch_reference(translation_pid_controller().get_control_effort());
 				set_reference_attitude(roll_pitch_reference);
 				LogFile::getInstance()->logData(heli::LOG_PID_TRANS_ATTITUDE_REF, roll_pitch_reference);
@@ -325,7 +327,7 @@ void Control::operator()()
 		{
 			try
 			{
-				x_y_sbf_controller(get_reference_position());
+				x_y_sbf_controller(reference_position);
 				blas::vector<double> attitude_reference(x_y_sbf_controller.get_control_effort());
 				set_reference_attitude(attitude_reference);
 				LogFile::getInstance()->logData(heli::LOG_SBF_TRANS_ATTITUDE_REF, attitude_reference);

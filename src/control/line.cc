@@ -35,7 +35,7 @@ line::line()
 void line::reset()
 {
 	set_start_location(IMU::getInstance()->get_ned_position());
-	start_time = boost::posix_time::microsec_clock::local_time();
+	set_start_time();
 	blas::vector<double> body_travel(3);
 	body_travel(0) = get_x_travel();
 	body_travel(1) = get_y_travel();
@@ -44,7 +44,7 @@ void line::reset()
 
 blas::vector<double> line::get_reference_position() const
 {
-	double elapsed_time = (boost::posix_time::microsec_clock::local_time() - start_time).total_milliseconds()/1000.0;
+	double elapsed_time = (boost::posix_time::microsec_clock::local_time() - get_start_time()).total_milliseconds()/1000.0;
 	double flight_time = (get_speed() > 0 ? get_distance()/get_speed() : 0);
 	double hover_time = get_hover_time();
 	if (flight_time == 0 || elapsed_time <= hover_time)
