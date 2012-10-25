@@ -138,7 +138,7 @@ void MainApp::run()
 
   // Set default autopilot mode
   autopilot_mode_lock.lock();
-  autopilot_mode = heli::MODE_DIRECT_MANUAL;
+  autopilot_mode = heli::MODE_AUTOMATIC_CONTROL;
   mode_changed(autopilot_mode);
   autopilot_mode_lock.unlock();
 
