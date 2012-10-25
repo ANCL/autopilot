@@ -24,7 +24,9 @@
 #include "Control.h"
 
 translation_outer_pid::translation_outer_pid()
-:scaled_travel(15)
+:scaled_travel(15),
+ x(10),
+ y(10)
 {
 	x.name() = "X";
 	y.name() = "Y";

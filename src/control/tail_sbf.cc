@@ -28,7 +28,10 @@
 /* STL Headers */
 #include <math.h>
 
-tail_sbf::tail_sbf() {
+tail_sbf::tail_sbf()
+: ned_x(10),
+  ned_y(10)
+{
 
 
 }
