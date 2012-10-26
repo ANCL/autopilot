@@ -477,7 +477,6 @@ void QGCLink::QGCSend::send_rc_channels(std::queue<std::vector<uint8_t> > *sendq
 
 void QGCLink::QGCSend::send_status(std::queue<std::vector<uint8_t> >* sendq)
 {
-
 	// get elements of the system status
 	heli::AUTOPILOT_MODE servo_source = get_servo_source();
 	uint8_t qgc_servo_source = 255;
@@ -509,6 +508,23 @@ void QGCLink::QGCSend::send_status(std::queue<std::vector<uint8_t> >* sendq)
 		qgc_pilot_mode = ::UALBERTA_PILOT_AUTO;
 		break;
 	default:
+		break;
+	}
+
+	heli::Trajectory_Type trajectory = Control::getInstance()->get_trajectory_type();
+	uint8_t qgc_trajectory = 255;
+	switch (trajectory)
+	{
+	case heli::Point_Trajectory:
+		qgc_trajectory = ::UALBERTA_POINT;
+		break;
+	case heli::Line_Trajectory:
+		qgc_trajectory = ::UALBERTA_LINE;
+		break;
+	case heli::Circle_Trajectory:
+		qgc_trajectory = ::UALBERTA_CIRCLE;
+		break;
+	default:  // prevents warning
 		break;
 	}
 
@@ -554,7 +570,7 @@ void QGCLink::QGCSend::send_status(std::queue<std::vector<uint8_t> >* sendq)
 
 	mavlink_msg_ualberta_sys_status_pack(qgc->uasId, 200, &msg,
 			qgc_servo_source, qgc_filter_state, qgc_pilot_mode, qgc_control_mode,(get_attitude_source()?UALBERTA_NAV_FILTER:UALBERTA_AHRS),
-			servo_switch::getInstance()->get_engine_rpm(), servo_switch::getInstance()->get_main_rotor_rpm(), Helicopter::getInstance()->get_main_collective(), 0, 0);
+			servo_switch::getInstance()->get_engine_rpm(), servo_switch::getInstance()->get_main_rotor_rpm(), Helicopter::getInstance()->get_main_collective(), 0, 0, qgc_trajectory);
 
 	buf.resize(mavlink_msg_to_send_buffer(&buf[0], &msg));
 

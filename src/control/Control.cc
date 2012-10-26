@@ -477,9 +477,9 @@ std::string Control::getTrajectoryString(heli::Trajectory_Type trajectory_type)
 	switch(trajectory_type)
 	{
 	case heli::Point_Trajectory:
-		return "POSITION_HOLD";
+		return "Point_Trajectory";
 	case heli::Line_Trajectory:
-		return "LINE_TRAJECTORY";
+		return "Line_Trajectory";
 	case heli::Circle_Trajectory:
 		return "Circle_Trajectory";
 	default:
@@ -508,6 +508,7 @@ void Control::set_controller_mode(heli::Controller_Mode mode)
 	{
 		this->mode_changed(mode);
 		warning() << "Controller mode changed to: " << getModeString(mode);
+		saveFile();
 	}
 }
 
@@ -558,5 +559,6 @@ void Control::set_trajectory_type(const heli::Trajectory_Type trajectory_type)
 	if (type_changed)
 	{
 		warning() << "Trajectory type changed to: " << getTrajectoryString(trajectory_type);
+		saveFile();
 	}
 }

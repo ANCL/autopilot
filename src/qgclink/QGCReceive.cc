@@ -162,6 +162,22 @@ void QGCLink::QGCReceive::receive()
 						}
 						break;
 					}
+					case UALBERTA_SET_TRAJECTORY_TYPE:
+					{
+						switch(action.param)
+						{
+						case UALBERTA_POINT:
+							Control::getInstance()->set_trajectory_type(heli::Point_Trajectory);
+							break;
+						case UALBERTA_LINE:
+							Control::getInstance()->set_trajectory_type(heli::Line_Trajectory);
+							break;
+						case UALBERTA_CIRCLE:
+							Control::getInstance()->set_trajectory_type(heli::Circle_Trajectory);
+							break;
+						}
+						break;
+					}
 					case UALBERTA_SHUTDOWN:
 					{
 						message() << "QGCReceive: Received shutdown message from QGC.  Sending shutdown signal.";

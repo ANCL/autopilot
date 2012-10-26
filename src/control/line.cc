@@ -46,7 +46,7 @@ void line::reset()
 	blas::vector<double> body_travel(3);
 	body_travel(0) = get_x_travel();
 	body_travel(1) = get_y_travel();
-	set_end_location(get_start_location() + prod(trans(IMU::getInstance()->get_heading_rotation()), body_travel));
+	set_end_location(get_start_location() + prod(IMU::getInstance()->get_heading_rotation(), body_travel));
 }
 
 std::vector<Parameter> line::getParameters() const

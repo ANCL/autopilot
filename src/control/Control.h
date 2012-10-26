@@ -148,6 +148,11 @@ public:
 	/// return the current reference attitude
 	blas::vector<double> get_reference_attitude() const {boost::mutex::scoped_lock(reference_attitude_lock); return reference_attitude;}
 
+	/// set trajectory type
+	void set_trajectory_type(const heli::Trajectory_Type trajectory_type);
+	/// get the trajectory type
+	heli::Trajectory_Type get_trajectory_type() const {boost::mutex::scoped_lock(trajectory_type_lock); return trajectory_type;}
+
 private:
 	Control();
 
@@ -260,10 +265,7 @@ private:
 	heli::Trajectory_Type trajectory_type;
 	/// serialize access to trajectory type
 	mutable boost::mutex trajectory_type_lock;
-	/// set trajectory type
-	void set_trajectory_type(const heli::Trajectory_Type trajectory_type);
-	/// get the trajectory type
-	heli::Trajectory_Type get_trajectory_type() const {boost::mutex::scoped_lock(trajectory_type_lock); return trajectory_type;}
+
 
 	/// line trajectory generator
 	line line_trajectory;
