@@ -470,6 +470,7 @@ void Control::reset()
 	roll_pitch_pid_controller.reset();
 	x_y_sbf_controller.reset();
 	line_trajectory.reset();
+	circle_trajectory.reset();
 }
 
 bool Control::runnable() const
@@ -483,6 +484,10 @@ blas::vector<double> Control::get_reference_position() const
 	if (get_trajectory_type() == heli::Line_Trajectory)
 	{
 		return line_trajectory.get_reference_position();
+	}
+	else if (get_trajectory_type() == heli::Circle_Trajectory)
+	{
+		return circle_trajectory.get_reference_position();
 	}
 	else //(get_trajectory_type() == heli::Point_Trajectory)
 	{

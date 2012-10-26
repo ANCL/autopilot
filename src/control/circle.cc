@@ -77,6 +77,9 @@ void circle::set_center_location()
 {
 	blas::vector<double> center(blas::zero_vector<double>(3));
 	center(0) = get_radius();  // vector in body frame with origin at heli
-	boost::mutex::scoped_lock lock(center_location_lock);
-	center_location = prod(IMU::getInstance()->get_heading_rotation(), center) + get_start_location();
+	{
+		boost::mutex::scoped_lock lock(center_location_lock);
+		center_location = prod(IMU::getInstance()->get_heading_rotation(), center) + get_start_location();
+	}
+	message() << "Circle: center_location set to: " << center_location;
 }

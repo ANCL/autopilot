@@ -31,6 +31,7 @@
 #include "tail_sbf.h"
 #include "IMU.h"
 #include "line.h"
+#include "circle.h"
 
 /* Boost Headers */
 #include <boost/numeric/ublas/vector.hpp>
@@ -262,6 +263,8 @@ private:
 
 	/// line trajectory generator
 	line line_trajectory;
+	/// circle trajectory generator
+	circle circle_trajectory;
 
 	/// convert a trajectoy type to a sting for logging
 	static std::string getTrajectoryString(heli::Trajectory_Type trajectory_type);
