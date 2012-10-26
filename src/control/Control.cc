@@ -79,6 +79,12 @@ std::vector<Parameter> Control::getParameters()
 	std::vector<Parameter> sbf_controller_params(x_y_sbf_controller.getParameters());
 	plist.insert(plist.end(), sbf_controller_params.begin(), sbf_controller_params.end());
 
+	std::vector<Parameter> line_params(line_trajectory.getParameters());
+	plist.insert(plist.end(), line_params.begin(), line_params.end());
+
+	std::vector<Parameter> circle_params(circle_trajectory.getParameters());
+	plist.insert(plist.end(), circle_params.begin(), circle_params.end());
+
 	// append parameters from any other controllers here
 
 	// return the complete parameter list
@@ -141,6 +147,22 @@ void Control::setParameter(Parameter p)
 		x_y_sbf_controller.set_y_derivative(p.getValue());
 	else if (param_id == tail_sbf::PARAM_Y_KI)
 		x_y_sbf_controller.set_y_integral(p.getValue());
+
+	else if (param_id == circle::PARAM_HOVER_TIME)
+		circle_trajectory.set_hover_time(p.getValue());
+	else if (param_id == circle::PARAM_RADIUS)
+		circle_trajectory.set_radius(p.getValue());
+	else if (param_id == circle::PARAM_SPEED)
+		circle_trajectory.set_speed(p.getValue());
+
+	else if (param_id == line::PARAM_HOVER_TIME)
+		line_trajectory.set_hover_time(p.getValue());
+	else if (param_id == line::PARAM_SPEED)
+		line_trajectory.set_speed(p.getValue());
+	else if (param_id == line::PARAM_X_TRAVEL)
+		line_trajectory.set_x_travel(p.getValue());
+	else if (param_id == line::PARAM_Y_TRAVEL)
+		line_trajectory.set_y_travel(p.getValue());
 
 	else
 	{
@@ -254,12 +276,18 @@ void Control::loadFile()
 			parse_pilot_mix(node);
 		else if (boost::to_upper_copy(std::string(node_name)) == "MODE")
 			parse_mode(node);
+		else if (boost::to_upper_copy(std::string(node_name)) == "TRAJECTORY")
+			parse_trajectory(node);
 		else if (std::string(node_name) == "attitude_pid")
 			attitude_pid_controller().parse_pid(node);
 		else if (std::string(node_name) == "translation_outer_pid")
 			translation_pid_controller().parse_xml_node(node);
 		else if (std::string(node_name) == "translation_outer_sbf")
 			x_y_sbf_controller.parse_xml_node(node);
+		else if (std::string(node_name) == "line")
+			line_trajectory.parse_xml_node(node);
+		else if (std::string(node_name) == "circle")
+			circle_trajectory.parse_xml_node(node);
 		else
 			warning() << __FILE__ << __LINE__ << "Found unknown node: " << node_name;
 	}
@@ -287,6 +315,13 @@ void Control::parse_mode(rapidxml::xml_node<> *mode)
 	std::string mode_value(mode->value());
 	boost::trim(mode_value);
 	set_controller_mode(static_cast<heli::Controller_Mode>(boost::lexical_cast<unsigned int>(mode_value)));
+}
+
+void Control::parse_trajectory(rapidxml::xml_node<> *trajectory)
+{
+	std::string trajectory_value(trajectory->value());
+	boost::trim(trajectory_value);
+	set_trajectory_type(static_cast<heli::Trajectory_Type>(boost::lexical_cast<unsigned int>(trajectory_value)));
 }
 
 void Control::operator()()
@@ -379,6 +414,14 @@ void Control::saveFile()
 	rapidxml::xml_node<> *sbf_pid_node = x_y_sbf_controller.get_xml_node(config_file_xml);
 	root_node->append_node(sbf_pid_node);
 
+	/* get circle params */
+	rapidxml::xml_node<> *circle_node = circle_trajectory.get_xml_node(config_file_xml);
+	root_node->append_node(circle_node);
+
+	/* get line params */
+	rapidxml::xml_node<> *line_node = line_trajectory.get_xml_node(config_file_xml);
+	root_node->append_node(line_node);
+
 	/* add pilot mixes */
 	rapidxml::xml_node<> *node = NULL;
 	char *node_value = NULL;
@@ -404,6 +447,10 @@ void Control::saveFile()
 
 	node_value = config_file_xml.allocate_string(boost::lexical_cast<std::string>(get_controller_mode()).c_str());
 	node = config_file_xml.allocate_node(rapidxml::node_element, "mode", node_value);
+	root_node->append_node(node);
+
+	node_value = config_file_xml.allocate_string(boost::lexical_cast<std::string>(get_trajectory_type()).c_str());
+	node = config_file_xml.allocate_node(rapidxml::node_element, "trajectory", node_value);
 	root_node->append_node(node);
 
 	std::ofstream config_file;

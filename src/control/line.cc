@@ -34,6 +34,11 @@ line::line()
 
 }
 
+const std::string line::PARAM_HOVER_TIME = "LIN_HOVER_TIME";
+const std::string line::PARAM_X_TRAVEL = "LIN_X_TRAVEL";
+const std::string line::PARAM_Y_TRAVEL = "LIN_Y_TRAVEL";
+const std::string line::PARAM_SPEED = "LIN_SPEED";
+
 void line::reset()
 {
 	set_start_location(IMU::getInstance()->get_ned_position());
@@ -42,6 +47,16 @@ void line::reset()
 	body_travel(0) = get_x_travel();
 	body_travel(1) = get_y_travel();
 	set_end_location(get_start_location() + prod(trans(IMU::getInstance()->get_heading_rotation()), body_travel));
+}
+
+std::vector<Parameter> line::getParameters() const
+{
+	std::vector<Parameter> plist;
+	plist.push_back(Parameter(PARAM_HOVER_TIME, get_hover_time(), heli::CONTROLLER_ID));
+	plist.push_back(Parameter(PARAM_X_TRAVEL, get_x_travel(), heli::CONTROLLER_ID));
+	plist.push_back(Parameter(PARAM_Y_TRAVEL, get_y_travel(), heli::CONTROLLER_ID));
+	plist.push_back(Parameter(PARAM_SPEED, get_speed(), heli::CONTROLLER_ID));
+	return plist;
 }
 
 blas::vector<double> line::get_reference_position() const
@@ -68,4 +83,68 @@ blas::vector<double> line::get_reference_position() const
 double line::get_distance() const
 {
 	return norm_2(get_end_location() - get_start_location());
+}
+
+rapidxml::xml_node<>* line::get_xml_node(rapidxml::xml_document<>& doc)
+{
+	rapidxml::xml_node<> *line_node = doc.allocate_node(rapidxml::node_element, "line");
+	{
+		char *node_value = NULL;
+		rapidxml::xml_attribute<> *attr = NULL;
+
+		node_value = doc.allocate_string(boost::lexical_cast<std::string>(get_x_travel()).c_str());
+		rapidxml::xml_node<> *param_node = doc.allocate_node(rapidxml::node_element, "param", node_value);
+		attr = doc.allocate_attribute("name", "x_travel");
+		param_node->append_attribute(attr);
+		line_node->append_node(param_node);
+
+		node_value = doc.allocate_string(boost::lexical_cast<std::string>(get_y_travel()).c_str());
+		param_node = doc.allocate_node(rapidxml::node_element, "param", node_value);
+		attr = doc.allocate_attribute("name", "y_travel");
+		param_node->append_attribute(attr);
+		line_node->append_node(param_node);
+
+		node_value = doc.allocate_string(boost::lexical_cast<std::string>(get_speed()).c_str());
+		param_node = doc.allocate_node(rapidxml::node_element, "param", node_value);
+		attr = doc.allocate_attribute("name", "speed");
+		param_node->append_attribute(attr);
+		line_node->append_node(param_node);
+
+		node_value = doc.allocate_string(boost::lexical_cast<std::string>(get_hover_time()).c_str());
+		param_node = doc.allocate_node(rapidxml::node_element, "param", node_value);
+		attr = doc.allocate_attribute("name", "hover");
+		param_node->append_attribute(attr);
+		line_node->append_node(param_node);
+	}
+
+	return line_node;
+}
+
+void line::parse_xml_node(rapidxml::xml_node<> *line_params)
+{
+	for (rapidxml::xml_node<> *param = line_params->first_node(); param; param = param->next_sibling())
+	{
+		if (boost::to_upper_copy(std::string(param->name())) == "PARAM")
+		{
+			rapidxml::xml_attribute<> *attr;
+			for (attr = param->first_attribute(); attr && std::string(attr->name()) != "name"; attr = attr->next_attribute());
+			std::string param_name(attr->value());
+			boost::to_upper(param_name);
+			std::string param_value(param->value());
+			boost::trim(param_value);
+
+			if (param_name == "X_TRAVEL")
+				set_x_travel(boost::lexical_cast<double>(param_value));
+			else if (param_name == "Y_TRAVEL")
+				set_y_travel(boost::lexical_cast<double>(param_value));
+			else if (param_name == "HOVER")
+				set_hover_time(boost::lexical_cast<double>(param_value));
+			else if (param_name == "SPEED")
+				set_speed(boost::lexical_cast<double>(param_value));
+			else
+				warning() << "Found unknown circle parameter";
+		}
+		else
+			warning() << "Found unknown node in circle xml node";
+	}
 }

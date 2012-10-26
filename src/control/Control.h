@@ -223,6 +223,10 @@ private:
 	 * Parse controller mode xml node and set the corresponding mode
 	 */
 	void parse_mode(rapidxml::xml_node<> *mode);
+
+	/// parse the trajectory type xml node
+	void parse_trajectory(rapidxml::xml_node<> *trajectory);
+
 	/**
 	 * save the state of the controller in an xml file
 	 */

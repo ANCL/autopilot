@@ -1,46 +1,58 @@
 <controller_params>
 	<attitude_pid>
 		<channel name="roll">
-			<gain type="proportional">1</gain>
-			<gain type="derivative">0.5</gain>
-			<gain type="integral">0.80000001192092918</gain>
+			<gain type="proportional">0.80000001192092918</gain>
+			<gain type="derivative">0.30000001192092896</gain>
+			<gain type="integral">0.10000000149011613</gain>
 		</channel>
 		<channel name="pitch">
-			<gain type="proportional">1</gain>
-			<gain type="derivative">0.80000001192092918</gain>
-			<gain type="integral">0.5</gain>
+			<gain type="proportional">0.80000001192092918</gain>
+			<gain type="derivative">0.30000001192092896</gain>
+			<gain type="integral">0.10000000149011613</gain>
 		</channel>
-		<roll_trim>0.80000001192092918</roll_trim>
+		<roll_trim>2</roll_trim>
 		<pitch_trim>0</pitch_trim>
 	</attitude_pid>
 	<translation_outer_pid>
 		<channel name="x">
-			<gain type="proportional">1</gain>
-			<gain type="derivative">0</gain>
-			<gain type="integral">0.10000000149011613</gain>
+			<gain type="proportional">0.10000000149011613</gain>
+			<gain type="derivative">0.30000001192092896</gain>
+			<gain type="integral">0.004999999888241291</gain>
 		</channel>
 		<channel name="y">
-			<gain type="proportional">1</gain>
-			<gain type="derivative">0</gain>
-			<gain type="integral">0.10000000149011613</gain>
+			<gain type="proportional">0.10000000149011613</gain>
+			<gain type="derivative">0.30000001192092896</gain>
+			<gain type="integral">0.004999999888241291</gain>
 		</channel>
-		<travel>25</travel>
+		<travel>35</travel>
 	</translation_outer_pid>
 	<translation_outer_sbf>
 		<channel name="ned_x">
-			<gain type="proportional">1</gain>
-			<gain type="derivative">1</gain>
-			<gain type="integral">1</gain>
+			<gain type="proportional">0.20000000298023229</gain>
+			<gain type="derivative">0.40000000596046459</gain>
+			<gain type="integral">0.008000000379979607</gain>
 		</channel>
 		<channel name="ned_y">
-			<gain type="proportional">1.5</gain>
-			<gain type="derivative">1</gain>
-			<gain type="integral">1</gain>
+			<gain type="proportional">0.20000000298023229</gain>
+			<gain type="derivative">0.40000000596046459</gain>
+			<gain type="integral">0.004999999888241291</gain>
 		</channel>
-		<travel>25</travel>
+		<travel>35</travel>
 	</translation_outer_sbf>
+	<circle>
+		<param name="radius">10</param>
+		<param name="speed">0.30000001192092896</param>
+		<param name="hover">7</param>
+	</circle>
+	<line>
+		<param name="x_travel">2</param>
+		<param name="y_travel">4</param>
+		<param name="speed">0.10000000149011613</param>
+		<param name="hover">5</param>
+	</line>
 	<mix channel="roll">0</mix>
 	<mix channel="pitch">0</mix>
-	<mode>0</mode>
+	<mode>2</mode>
+	<trajectory>0</trajectory>
 </controller_params>
 

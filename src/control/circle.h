@@ -27,8 +27,13 @@ namespace blas = boost::numeric::ublas;
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
 
+/* STL Headers */
+#include <string>
+#include <vector>
+
 /* Project Headers */
 #include "Debug.h"
+#include "Parameter.h"
 
 /**
  * This class defines a circular reference trajectory.  The helicopter
@@ -44,15 +49,38 @@ public:
 	blas::vector<double> get_reference_position() const;
 	/// reset the trajectory to begin from the current location
 	void reset();
+
+	/// set the speed
+	void set_speed(const double speed) {{boost::mutex::scoped_lock(speed_lock); this->speed = speed;} message() << "Circle: speed set to " << speed;}
+	/// get the speed
+	double get_speed() const {boost::mutex::scoped_lock(speed_lock); return speed;}
+
+	/// set the radius
+	void set_radius(const double radius) {boost::mutex::scoped_lock lock(radius_lock); this->radius = radius;}
+	/// get the radius
+	double get_radius() const {boost::mutex::scoped_lock lock(radius_lock); return radius;}
+
+	/// set the initial hover time before trajectory begins
+	void set_hover_time(const double hover_time) {{boost::mutex::scoped_lock(hover_time_lock); this->hover_time = hover_time;} message() << "Circle: Hover time set to " << hover_time;}
+	/// get the hover time
+	double get_hover_time() const {boost::mutex::scoped_lock(hover_time_lock); return hover_time;}
+
+	/// return the parameter list to send to qgc
+	std::vector<Parameter> getParameters() const;
+
+	/// create and xml tree with the controller parameters
+	rapidxml::xml_node<>* get_xml_node(rapidxml::xml_document<>& doc);
+	/// parse an xml tree containing the parameters for the function and populate the values
+	void parse_xml_node(rapidxml::xml_node<> *circle_params);
+
+	static const std::string PARAM_RADIUS;
+	static const std::string PARAM_HOVER_TIME;
+	static const std::string PARAM_SPEED;
 protected:
 	/// radius of circular trajectory
 	double radius;
 	///serialize access to radius
 	mutable boost::mutex radius_lock;
-	/// set the radius
-	void set_radius(const double radius) {boost::mutex::scoped_lock lock(radius_lock); this->radius = radius;}
-	/// get the radius
-	double get_radius() const {boost::mutex::scoped_lock lock(radius_lock); return radius;}
 
 	/// position to begin trajectory in NED frame
 	blas::vector<double> start_location;
@@ -76,19 +104,11 @@ protected:
 	double speed;
 	/// serialize access to speed
 	mutable boost::mutex speed_lock;
-	/// set the speed
-	void set_speed(const double speed) {{boost::mutex::scoped_lock(speed_lock); this->speed = speed;} message() << "Circle: speed set to " << speed;}
-	/// get the speed
-	double get_speed() const {boost::mutex::scoped_lock(speed_lock); return speed;}
 
 	/// time to hover before manouever in seconds
 	double hover_time;
 	/// serialize access to hover_time
 	mutable boost::mutex hover_time_lock;
-	/// set the initial hover time before trajectory begins
-	void set_hover_time(const double hover_time) {{boost::mutex::scoped_lock(hover_time_lock); this->hover_time = hover_time;} message() << "Circle: Hover time set to " << hover_time;}
-	/// get the hover time
-	double get_hover_time() const {boost::mutex::scoped_lock(hover_time_lock); return hover_time;}
 
 	/// time the trajectory started
 	boost::posix_time::ptime start_time;

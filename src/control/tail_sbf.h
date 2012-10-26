@@ -114,7 +114,7 @@ public:
 	/// create and xml tree with the controller parameters
 	rapidxml::xml_node<>* get_xml_node(rapidxml::xml_document<>& doc);
 	/// parse an xml tree containing the parameters for the function and populate the values
-	void parse_xml_node(rapidxml::xml_node<> *pid_params);
+	void parse_xml_node(rapidxml::xml_node<> *sbf_params);
 private:
 	/// error states in ned x,y directions
 	pid_channel ned_x, ned_y;
