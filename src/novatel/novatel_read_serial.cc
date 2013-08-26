@@ -219,6 +219,7 @@ void GPS::read_serial::readPort()
 					}
 				}
 			case 244:  // RTKXYZ
+			case 241: //bestxyz
 			{
 				if (!is_response(header))
 				{
@@ -401,7 +402,8 @@ void GPS::read_serial::send_log_command()
 
 	std::vector<uint8_t> port(int_to_raw(192));
 	command.insert(command.end(), port.begin(), port.end());
-	std::vector<uint8_t> id(int_to_raw(static_cast<uint16_t>(244)));
+//	std::vector<uint8_t> id(int_to_raw(static_cast<uint16_t>(244)));
+	std::vector<uint8_t> id(int_to_raw(static_cast<uint16_t>(241))); // send bestxyz instead of rtkxyz
 	command.insert(command.end(), id.begin(), id.end());
 	command += 0, 0;
 	std::vector<uint8_t> trigger(int_to_raw(2));
