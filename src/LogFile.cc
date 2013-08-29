@@ -21,7 +21,8 @@
 
 LogFile::LogFile()
 	:data_out(LogFileWrite(this)),
-	 startTime(boost::posix_time::microsec_clock::local_time())
+	 startTime(boost::posix_time::microsec_clock::local_time()),
+	 last_message_count(0)
 {
   log = new std::map<std::string, std::queue<std::string> >();
   headers = new std::map<std::string, std::string>();
@@ -225,15 +226,31 @@ void LogFile::LogFileWrite::do_terminate::operator()()
 
 void LogFile::logMessage(const std::string& name, const std::string& msg)
 {
-  std::stringstream *dataStr = new std::stringstream();
+	if (last_message == msg)
+	{
+		last_message_count++;
+	}
+	else
+	{
 
-  boost::posix_time::ptime time(boost::posix_time::microsec_clock::local_time());
-  *dataStr << ((time-startTime).total_milliseconds()) << '\t';
-  *dataStr << msg;
-  *dataStr << std::endl;
-  {
-	  boost::mutex::scoped_lock(this->logMutex);
-  	  (*log)[name].push(dataStr->str());
-  }
-  delete dataStr;
+		last_message = msg;
+
+		std::stringstream *dataStr = new std::stringstream();
+
+		boost::posix_time::ptime time(boost::posix_time::microsec_clock::local_time());
+		*dataStr << ((time-startTime).total_milliseconds()) << '\t';
+		if (last_message_count > 0)
+		{
+			*dataStr << "Last Message Repeated " << last_message_count << " times." << std::endl;
+			last_message_count = 0;
+			*dataStr << ((time-startTime).total_milliseconds()) << '\t';
+		}
+		*dataStr << msg;
+		*dataStr << std::endl;
+		{
+			boost::mutex::scoped_lock(this->logMutex);
+			(*log)[name].push(dataStr->str());
+		}
+		delete dataStr;
+	}
 }

@@ -171,7 +171,10 @@ class LogFile
   boost::filesystem::path log_folder;
   /// Mutex to synchronize the writing thread with the logging (main or other) thread
   boost::mutex logMutex;
-
+  /// store the last message logged
+  std::string last_message;
+  /// count number of occurences of last message
+  int last_message_count;
 
   /// Exception to be thrown if LogFileWrite is constructed without a valid pointer to a parent
   class bad_logfile_parent : public std::exception
@@ -223,6 +226,8 @@ class LogFile
 	  bool check_terminate();
 	  /// keep track of open files
 	  std::map<std::string, std::fstream*> openFiles;
+
+
 
 	  /// This is the slot used by boost::signals2 for terminating the writing thread
 	  class do_terminate
