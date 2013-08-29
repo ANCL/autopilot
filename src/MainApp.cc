@@ -69,6 +69,8 @@ const MainApp& MainApp::operator=(const MainApp& other)
 #include "tests/qgclink_test.cc"
 #elif defined(GX3_TEST)
 #include "tests/gx3_test.cc"
+#elif defined(ADC_TEST)
+#include "tests/adc_test.cc"
 #else
 
 void MainApp::run()
