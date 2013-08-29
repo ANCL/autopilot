@@ -54,6 +54,7 @@ const short imuUpdatePulseCode = _PULSE_CODE_MINAVAIL + 4;
 const short ahrsUpdatePulseCode = _PULSE_CODE_MINAVAIL + 5;
 const short QGCLinkSendPulseCode = _PULSE_CODE_MINAVAIL + 6;
 const short servo_switch_pulse_code = _PULSE_CODE_MINAVAIL + 7;
+const short adc_pulse_code = _PULSE_CODE_MINAVAIL + 8;
 
 
 // priorities list (lowest = 0, highest = 255)
@@ -63,6 +64,7 @@ const unsigned int imuUpdatePriority = 98;
 const unsigned int ahrsUpdatePriority = 97;
 const unsigned int qgcSendPriority = 85;
 const unsigned int servo_switch_send_priority = 99;
+const unsigned int adc_send_priority = 80;
 
 // controller logs
 const std::string LOG_ATTITUDE_ERROR = "Attitude PID Error States";

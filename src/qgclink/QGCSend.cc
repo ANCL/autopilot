@@ -26,6 +26,7 @@
 #include "IMU.h"
 #include "GPS.h"
 #include "Helicopter.h"
+#include "adc.h"
 
 /* MAVLink Headers */
 #include <mavlink.h>
@@ -434,7 +435,7 @@ void QGCLink::QGCSend::send_heartbeat(std::queue<std::vector<uint8_t> > *sendq)
 	mavlink_message_t msg;
 	std::vector<uint8_t> buf(MAVLINK_MAX_PACKET_LEN);
 
-	mavlink_msg_heartbeat_pack(100, 200, &msg, system_type, autopilot_type, 0, 0, 0);
+	mavlink_msg_heartbeat_pack(qgc->uasId, 200, &msg, system_type, autopilot_type, 0, 0, 0);
 	buf.resize(mavlink_msg_to_send_buffer(&buf[0], &msg));
 
 	sendq->push(buf);
@@ -568,9 +569,13 @@ void QGCLink::QGCSend::send_status(std::queue<std::vector<uint8_t> >* sendq)
 	mavlink_message_t msg;
 	std::vector<uint8_t> buf(MAVLINK_MAX_PACKET_LEN);
 
+	ADC* adc=ADC::getInstance();
+
 	mavlink_msg_ualberta_sys_status_pack(qgc->uasId, 200, &msg,
 			qgc_servo_source, qgc_filter_state, qgc_pilot_mode, qgc_control_mode,(get_attitude_source()?UALBERTA_NAV_FILTER:UALBERTA_AHRS),
-			servo_switch::getInstance()->get_engine_rpm(), servo_switch::getInstance()->get_main_rotor_rpm(), Helicopter::getInstance()->get_main_collective(), 0, 0, qgc_trajectory);
+			servo_switch::getInstance()->get_engine_rpm(), servo_switch::getInstance()->get_main_rotor_rpm(),
+			Helicopter::getInstance()->get_main_collective(),
+			adc->get_rx(), adc->get_ampro(), adc->get_kontron(), qgc_trajectory);
 
 	buf.resize(mavlink_msg_to_send_buffer(&buf[0], &msg));
 

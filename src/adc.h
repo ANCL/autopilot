@@ -38,13 +38,18 @@
 
 class ADC {
 public:
-	ADC();
+
 	virtual ~ADC();
 	static ADC* getInstance();
 
 	struct update{void operator()();};
 
+	double get_ampro() const {boost::mutex::scoped_lock lock(ampro_lock); return ampro;}
+	double get_rx() const {boost::mutex::scoped_lock lock(rx_lock); return rx;}
+	double get_kontron() const {boost::mutex::scoped_lock lock(kontron_lock); return kontron;}
+
 private:
+	ADC();
 	static ADC* _instance;
 	static boost::mutex _instance_lock;
 
@@ -53,17 +58,23 @@ private:
 
 	/** Store the current ampro battery voltage */
 	double ampro;
+	mutable boost::mutex ampro_lock;
+	void set_ampro(double ampro) {boost::mutex::scoped_lock lock(ampro_lock); this->ampro = ampro;}
 
 	/** Store the current voltage of the receiver battery*/
 	double rx;
+	mutable boost::mutex rx_lock;
+	void set_rx(double rx) {boost::mutex::scoped_lock lock(rx_lock); this->rx = rx;}
 
 	/** Store the current voltage of the Kontron battery */
 	double kontron;
+	mutable boost::mutex kontron_lock;
+	void set_kontron(double kontron) {boost::mutex::scoped_lock lock(kontron_lock); this->kontron = kontron;}
 
-	// handle to the pci system
+	/// handle to the pci system
 	int pci_handle;
 
-	// pointer to base address of adc card
+	/// pointer to base address of adc card - no mutex used since only one thread at a time wil access this value
 	char* adc_bar0;
 };
 

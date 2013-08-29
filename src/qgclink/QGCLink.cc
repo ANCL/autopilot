@@ -40,7 +40,7 @@ using boost::asio::ip::address;
 
 QGCLink::QGCLink()
 : socket(io_service),
-  heartbeat_rate(10),
+  heartbeat_rate(5),
   rc_channel_rate(10),
   control_output_rate(10),
   position_rate(10),

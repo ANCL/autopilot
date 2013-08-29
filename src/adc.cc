@@ -20,6 +20,7 @@
 /* Project Headers */
 #include "adc.h"
 #include "Debug.h"
+#include "heli.h"
 
 /* Boost Headers */
 #include <boost/function.hpp>
@@ -60,14 +61,14 @@ ADC::ADC()
 		return;
 	}
 
-	debug() << "CpuMemTranslation: " << std::hex << (long unsigned int)pci_info.CpuMemTranslation;
-	debug() << "is mem" << PCI_IS_MEM(pci_info.CpuBaseAddress[0]);
-	debug() << "Device Bar0 Address: " << std::hex << (long unsigned int)(pci_info.CpuBaseAddress[0]) << "and the size is" << std::dec << pci_info.BaseAddressSize[0];
+//	debug() << "CpuMemTranslation: " << std::hex << (long unsigned int)pci_info.CpuMemTranslation;
+//	debug() << "is mem" << PCI_IS_MEM(pci_info.CpuBaseAddress[0]);
+//	debug() << "Device Bar0 Address: " << std::hex << (long unsigned int)(pci_info.CpuBaseAddress[0]) << "and the size is" << std::dec << pci_info.BaseAddressSize[0];
 
 	// map bar0 into process memory - now the registered can be read and written as described in adc docs
 	adc_bar0 = (char *) mmap_device_memory(NULL, pci_info.BaseAddressSize[0], PROT_READ|PROT_WRITE, 0, PCI_MEM_ADDR(pci_info.CpuBaseAddress[0]));
 
-	debug() << "Command Reg: " << std::hex << (uint32_t)*(adc_bar0 + 8);
+//	debug() << "Command Reg: " << std::hex << (uint32_t)*(adc_bar0 + 8);
 	// compute the address of the command register
 	uint32_t *cmd_reg = (uint32_t*)(adc_bar0 + 8);
 	// set the card to sample ch0 single-ended on each ADC
@@ -85,11 +86,44 @@ ADC::~ADC()
 
 void ADC::update::operator()()
 {
-	uint16_t* adc_bar0 = (uint16_t*)getInstance()->adc_bar0;
-	double adc0 = (*(uint16_t*)adc_bar0)*10.0/65536;
-	double adc1 = (*(uint16_t*)(adc_bar0+2))*10.0/65536;
-	// this one requires the voltage divider to be inverted
-	double adc2 = (*(uint16_t*)(adc_bar0+4))*10.0/65536*(6.8e3+3.9e3)/6.8e3;
-	debug() << "ADC0:" << adc0 << "ADC1:" << adc1 << "ADC2:" << adc2;
+	struct sigevent         event;
+	struct itimerspec       itime;
+	timer_t                 timer_id;
+	/* ChannelCreate() func. creates a channel that is owned by the process (and isn't bound to the creating thread). */
+	int chid = ChannelCreate(0);
+
+	event.sigev_notify = SIGEV_PULSE;
+
+	/* Threads wishing to connect to the channel identified by 'chid'(channel id) by ConnectAttach() func.
+		 Once attached thread can MsgSendv() & MsgSendPulse() to enqueue messages & pulses on the channel in priority order. */
+	event.sigev_coid = ConnectAttach(ND_LOCAL_NODE, 0,
+			chid,
+			_NTO_SIDE_CHANNEL, 0);
+	event.sigev_priority = heli::adc_send_priority;
+	event.sigev_code = heli::adc_pulse_code;
+	timer_create(CLOCK_REALTIME, &event, &timer_id);
+
+	itime.it_value.tv_sec = 1;
+	itime.it_value.tv_nsec = 0;
+	itime.it_interval.tv_sec = 1;
+	itime.it_interval.tv_nsec = 0;
+	timer_settime(timer_id, 0, &itime, NULL);
+
+	_pulse pulse;
+
+	for(;;)
+	{
+		MsgReceivePulse(chid, &pulse, sizeof(pulse), NULL);
+		ADC* adc = getInstance();
+		uint16_t* adc_bar0 = (uint16_t*)adc->adc_bar0;
+		double adc0 = (*adc_bar0)*10.0/65536;
+		adc->set_ampro(adc0);
+		double adc1 = (*(adc_bar0+1))*10.0/65536;
+		adc->set_rx(adc1);
+		// this one requires the voltage divider to be inverted
+		double adc2 = (*(adc_bar0+2))*10.0/65536*(6.8e3+3.9e3)/6.8e3;
+		adc->set_kontron(adc2);
+//		debug() << "ADC0:" << adc0 << "ADC1:" << adc1 << "ADC2:" << adc2;
+	}
 
 }

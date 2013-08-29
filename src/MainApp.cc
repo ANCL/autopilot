@@ -31,6 +31,7 @@
 #include "bad_control.h"
 #include "IMU.h"
 #include "GPS.h"
+#include "adc.h"
 
 MainApp::MainApp()
 {
@@ -131,6 +132,9 @@ void MainApp::run()
   // broadcast the controller mode
   control->mode_changed(control->get_controller_mode());
   GPS::getInstance();
+
+  // start ADC polling
+  ADC::getInstance();
 
   using std::vector;
   vector<uint16_t> inputMicros(6);
