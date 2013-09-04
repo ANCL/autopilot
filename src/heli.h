@@ -101,6 +101,7 @@ const std::string LOG_EULER = "GX3 Nav Euler Angles";
 const std::string Log_AHRS_Euler = "GX3 AHRS Euler Angles";
 const std::string Log_AHRS_Ang_Rate = "GX3 AHRS Angular Rates";
 const std::string Log_AHRS_Ang_Rate_Filtered = "GX3 AHRS Angular Rates Filtered";
+const std::string Log_Battery_Voltage = "Battery Voltage";
 
 void shutdown(int signumber);
 

@@ -74,6 +74,8 @@ ADC::ADC()
 	// set the card to sample ch0 single-ended on each ADC
 	uint32_t batt_voltage_cmd = 0x8c8c8c8c;
 	// write the settings to the command register
+	LogFile::getInstance()->logHeader(heli::Log_Battery_Voltage, "Ampro, Rx, Kontron");
+	LogFile::getInstance()->logData(heli::Log_Battery_Voltage,std::vector<double>());
 	*cmd_reg = batt_voltage_cmd;
 	update_thread = boost::thread(update());
 }
@@ -116,13 +118,18 @@ void ADC::update::operator()()
 		MsgReceivePulse(chid, &pulse, sizeof(pulse), NULL);
 		ADC* adc = getInstance();
 		uint16_t* adc_bar0 = (uint16_t*)adc->adc_bar0;
+		std::vector<double> data;
 		double adc0 = (*adc_bar0)*10.0/65536;
 		adc->set_ampro(adc0);
+		data.push_back(adc0);
 		double adc1 = (*(adc_bar0+1))*10.0/65536;
 		adc->set_rx(adc1);
+		data.push_back(adc1);
 		// this one requires the voltage divider to be inverted
 		double adc2 = (*(adc_bar0+2))*10.0/65536*(6.8e3+3.9e3)/6.8e3;
 		adc->set_kontron(adc2);
+		data.push_back(adc2);
+		LogFile::getInstance()->logData(heli::Log_Battery_Voltage, data);
 //		debug() << "ADC0:" << adc0 << "ADC1:" << adc1 << "ADC2:" << adc2;
 	}
 
