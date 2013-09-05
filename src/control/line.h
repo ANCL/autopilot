@@ -82,7 +82,7 @@ public:
 	static const std::string PARAM_HOVER_TIME;
 	static const std::string PARAM_SPEED;
 
-protected:
+//protected:
 	/// position to begin trajectory in NED frame
 	blas::vector<double> start_location;
 	/// serialzie access to start_location

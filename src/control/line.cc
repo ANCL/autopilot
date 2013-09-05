@@ -17,13 +17,14 @@
  *     along with ANCL Autopilot.  If not, see <http://www.gnu.org/licenses/>.
  *************************************************************************/
 
-#include "line.h"
+#include "control/line.h"
 
 /* STL Headers */
 #include <math.h>
 
 /* Project Headers */
 #include "IMU.h"
+
 
 line::line()
 : start_location(blas::zero_vector<double>(3)),

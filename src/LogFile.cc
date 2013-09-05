@@ -76,7 +76,9 @@ LogFile::LogFile()
 		  boost::filesystem::remove(*it);
   }
 
+#ifndef TEST
   MainApp::add_thread(&data_out, std::string("Log File"));
+#endif
 }
 
 LogFile::~LogFile()
@@ -113,7 +115,9 @@ LogFile::LogFileWrite::LogFileWrite(LogFile* parent)
 		throw(bad_logfile_parent());
 	this->parent = parent;
 
+#ifndef TEST
 	MainApp::terminate.connect(LogFile::LogFileWrite::do_terminate());
+#endif
 }
 
 void LogFile::LogFileWrite::write_thread()
