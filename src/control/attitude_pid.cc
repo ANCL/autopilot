@@ -103,6 +103,7 @@ void attitude_pid::operator()(const blas::vector<double>& reference,
 
 	blas::vector<double> euler_error(euler - reference);
 	blas::vector<double> euler_rate_error(euler_rate - reference_derivative);
+	// nb: yaw rate is unused - which is good since based on previous tests it was unreliable
 
 	std::vector<double> log(euler_error.begin(), euler_error.end());
 	log.insert(log.end(), euler_rate_error.begin(), euler_rate_error.end());
@@ -114,25 +115,25 @@ void attitude_pid::operator()(const blas::vector<double>& reference,
 	error_states.push_back(roll.error().proportional() = euler_error[0]);
 	error_states.push_back(roll.error().derivative() = euler_rate_error[0]);
 	error_states.push_back(++roll.error());
-	control_effort[0] = roll.compute_pid();
+	control_effort[0] = reference_2derivative[0] + roll.compute_pid();
 	roll_lock.unlock();
 
 	pitch_lock.lock();
 	error_states.push_back(pitch.error().proportional() = euler_error[1]);
 	error_states.push_back(pitch.error().derivative() = euler_rate_error[1]);
 	error_states.push_back(++pitch.error());
-	control_effort[1] = pitch.compute_pid();
+	control_effort[1] = reference_2derivative[1] + pitch.compute_pid();
 	pitch_lock.unlock();
 
 	yaw_lock.lock();
 	error_states.push_back(yaw.error().proportional() = euler_error[2]);
 	error_states.push_back(++yaw.error());
-	control_effort[2] = yaw.compute_pid();
+	control_effort[2] = reference_derivative[2] + yaw.compute_pid();
 	yaw_lock.unlock();
 
-	// saturate the controls to [-1, 1]
-	Control::saturate(control_effort);
-	set_control_effort(control_effort);
+	// saturate the controls to [-1, 1] - don't want to do this for yaw channel
+//	Control::saturate(control_effort);
+//	set_control_effort(control_effort);
 
 	LogFile::getInstance()->logData(heli::LOG_ATTITUDE_ERROR, error_states);
 	LogFile::getInstance()->logData(heli::LOG_ATTITUDE_CONTROL_EFFORT, control_effort);
