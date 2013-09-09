@@ -27,7 +27,7 @@
 /* Project Headers */
 #include "Parameter.h"
 #include "pid_channel.h"
-#include "GPS_Filter.h"
+//#include "GPS_Filter.h"
 #include "ControllerInterface.h"
 
 /* Boost Headers */
@@ -89,6 +89,8 @@ public:
 			const blas::vector<double>& reference_2derivative) throw(bad_control);
 	/// @returns the roll pitch reference in radians (threadsafe)
 	inline blas::vector<double> get_control_effort() const {boost::mutex::scoped_lock lock(control_effort_lock); return control_effort;}
+	inline blas::vector<double> get_control_derivative() const {boost::mutex::scoped_lock lock(control_derivative_lock); return control_derivative;}
+	inline blas::vector<double> get_control_2derivative() const {boost::mutex::scoped_lock lock(control_2derivative_lock); return control_2derivative;}
 
 	/// @returns the list of parameters for the translational pid outer loop
 	std::vector<Parameter> getParameters();
@@ -124,9 +126,11 @@ private:
 	mutable boost::mutex x_lock;
 	pid_channel y;
 	mutable boost::mutex y_lock;
+	pid_channel z;
+	mutable boost::mutex z_lock;
 
-	boost::array<GPS_Filter, 3> pos_filters;
-	boost::array<GPS_Filter, 3> vel_filters;
+//	boost::array<GPS_Filter, 3> pos_filters;
+//	boost::array<GPS_Filter, 3> vel_filters;
 
 	/// store the current control effort
 	blas::vector<double> control_effort;
@@ -134,6 +138,14 @@ private:
 	mutable boost::mutex control_effort_lock;
 	/// threadsafe set control_effort
 	inline void set_control_effort(const blas::vector<double>& control_effort) {boost::mutex::scoped_lock lock(control_effort_lock); this->control_effort = control_effort;}
+
+	blas::vector<double> control_derivative;
+	mutable boost::mutex control_derivative_lock;
+	inline void set_control_derivative(const blas::vector<double>& control_derivative) {boost::mutex::scoped_lock(control_derivative_lock); this->control_derivative = control_derivative;}
+
+	blas::vector<double> control_2derivative;
+	mutable boost::mutex control_2derivative_lock;
+	inline void set_control_2derivative(const blas::vector<double>& control_2derivative) {boost::mutex::scoped_lock(control_2derivative_lock); this->control_2derivative = control_2derivative;}
 
 	/**
 	 * Stores the rotational travel which is used to map the output of the

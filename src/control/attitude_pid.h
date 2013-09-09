@@ -58,7 +58,7 @@ public:
 			const blas::vector<double>& reference_derivative,
 			const blas::vector<double>& reference_2derivative) throw(bad_control);
 
-	/// threadsafe get control_effort - this is a 3-vector of (normlaized) torques in roll pitch yaw directions
+	/// threadsafe get control_effort - this is a 3-vector of (normlaized) torques in roll pitch yaw directions (yaw is actually a vel reference)
 	inline blas::vector<double> get_control_effort() const {boost::mutex::scoped_lock lock(control_effort_lock); return control_effort;}
 
 	/// reset the integrator error states

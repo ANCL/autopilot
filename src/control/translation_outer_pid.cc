@@ -22,14 +22,23 @@
 /* Project Headers */
 #include "IMU.h"
 #include "Control.h"
+#include "Helicopter.h"
 
 translation_outer_pid::translation_outer_pid()
 : x(100),
   y(100),
+  z(100),
+  control_effort(3,0),
+  control_derivative(3,0),
+  control_2derivative(3,0),
   scaled_travel(15)
 {
 	x.name() = "X";
 	y.name() = "Y";
+	z.name() = "Z";
+
+	LogFile::getInstance()->logHeader(heli::LOG_TRANS_PID_ERROR_STATES, "X_Prop, X_Deriv, X_Int, Y_Prop, Y_Deriv, Y_Int, Z_Prop, Z_Deriv, Z_Int");
+	LogFile::getInstance()->logData(heli::LOG_TRANS_PID_ERROR_STATES, std::vector<double>());
 }
 
 translation_outer_pid::translation_outer_pid(const translation_outer_pid& other)
@@ -62,44 +71,97 @@ void translation_outer_pid::operator()(const blas::vector<double>& reference,
 	blas::vector<double> position(imu->get_ned_position());
 	blas::matrix<double> body_rotation(trans(IMU::euler_to_rotation(euler)));
 	blas::vector<double> body_position_error(blas::prod(body_rotation, position - reference));
-	blas::vector<double> body_velocity_error(blas::prod(body_rotation, imu->get_ned_velocity()));
+	blas::vector<double> body_velocity_error(blas::prod(body_rotation, imu->get_ned_velocity() - reference_derivative));
+	blas::vector<double> body_reference_2derivative(blas::prod(body_rotation, reference_2derivative));
 
-	// roll pitch reference
-	blas::vector<double> attitude_reference(2);
-	attitude_reference.clear();
-	std::vector<double> error_states;
+
+	blas::vector<double> control_effort(blas::zero_vector<double>(3)); // general control effort u^t
+	std::vector<double> error_states; // log
+	double mass = Helicopter::getInstance()->get_mass();
 	{
 		boost::mutex::scoped_lock lock(x_lock);
 		error_states.push_back(x.error().proportional() = body_position_error[0]);
 		error_states.push_back(x.error().derivative() = body_velocity_error[0]);
 		error_states.push_back(++(x.error()));
-		attitude_reference[1] = -x.compute_pid();
+		control_effort[0] = mass*body_reference_2derivative[0] + x.compute_pid();
 	}
 	{
 		boost::mutex::scoped_lock lock(y_lock);
 		error_states.push_back(y.error().proportional() = body_position_error[1]);
 		error_states.push_back(y.error().derivative() = body_velocity_error[1]);
 		error_states.push_back(++(y.error()));
-		attitude_reference[0] = y.compute_pid();
+		control_effort[1] = mass*body_reference_2derivative[1] + y.compute_pid();
 	}
+	{
+		boost::mutex::scoped_lock lock(z_lock);
+		error_states.push_back(z.error().proportional() = body_position_error[2]);
+		error_states.push_back(z.error().derivative() = body_velocity_error[2]);
+		error_states.push_back(++(z.error()));
+		control_effort[2] = mass*body_reference_2derivative[2] + z.compute_pid();
+	}
+
 
 	LogFile::getInstance()->logData(heli::LOG_TRANS_PID_ERROR_STATES, error_states);
 
-	Control::saturate(attitude_reference, scaled_travel_radians());
+	// compute thrust and roll-pitch reference
+	double gravity = Helicopter::getInstance()->get_gravity();
+	blas::matrix<double> scaling_matrix(blas::zero_matrix<double>(3,3));
+	scaling_matrix(0,1) = 1.0/mass/gravity;
+	scaling_matrix(1,0) = -1.0/mass/gravity;
+	scaling_matrix(2,2) = 1;
+	blas::vector<double> physical_controls = blas::prod(scaling_matrix, control_effort);
+	physical_controls(2) += mass*gravity;
+
+	blas::vector<double> roll_pitch_reference(2,0);
+	std::copy(roll_pitch_reference.begin(), physical_controls.begin(), physical_controls.end()-1);
+
+
+//	Control::saturate(attitude_reference, scaled_travel_radians());
 
 	// set the reference to a roll pitch orientation in radians
-	set_control_effort(attitude_reference);
+	set_control_effort(physical_controls);
+
+	blas::matrix<double> Kp(blas::zero_matrix<double>(2,2));
+	Kp(0,0) = x.gains().proportional();
+	Kp(1,1) = y.gains().proportional();
+	blas::matrix<double> Kd(blas::zero_matrix<double>(2,2));
+	Kd(0,0) = x.gains().derivative();
+	Kd(1,1) = y.gains().derivative();
+	blas::matrix<double> Ki(blas::zero_matrix<double>(2,2));
+	Ki(0,0) = x.gains().integral();
+	Ki(1,1) = y.gains().integral();
+
+	blas::vector<double> reference_3derivative(2,0);
+	blas::vector<double> reference_4derivative(2,0);
+
+	blas::vector<double> x_y_error(2,0);
+	std::copy(x_y_error.begin(), body_position_error.begin(), body_position_error.end()-1);
+	blas::vector<double> x_y_velocity_error(2,0);
+	std::copy(x_y_velocity_error.begin(), body_velocity_error.begin(), body_velocity_error.end()-1);
+	blas::vector<double> x_y_error_integral(2,0);
+	x_y_error_integral(0) = x.error().integral();
+
+	blas::vector<double> roll_pitch_reference_derivative(reference_3derivative*mass
+			+ blas::prod((blas::prod(Kd,Kd)-Kp),x_y_velocity_error)
+			+ blas::prod((blas::prod(Kd,Kp)-Ki),x_y_error)
+			+ blas::prod(blas::prod(Kd,Ki),x_y_error_integral));
+
+	blas::vector<double> roll_pitch_reference_2derivative(reference_4derivative*mass
+			+ blas::prod(-blas::prod(blas::matrix<double>(blas::prod(Kd,Kd)),Kd)+blas::prod(Kd,Kp)*2-Ki, x_y_velocity_error)
+			+ blas::prod(-blas::prod(Kd,Kp)+blas::prod(Kd,Ki)+blas::prod(Kp,Kp), x_y_error)
+			+ blas::prod(-blas::prod(blas::matrix<double>(blas::prod(Kd,Kd)),Ki)+blas::prod(Kp,Ki),x_y_error_integral));
 }
 
 void translation_outer_pid::reset()
 {
-	for (boost::array<GPS_Filter, 3>::iterator it = pos_filters.begin(); it != pos_filters.end(); ++it)
-		(*it).reset();
-	for (boost::array<GPS_Filter, 3>::iterator it = vel_filters.begin(); it != vel_filters.end(); ++it)
-		(*it).reset();
+//	for (boost::array<GPS_Filter, 3>::iterator it = pos_filters.begin(); it != pos_filters.end(); ++it)
+//		(*it).reset();
+//	for (boost::array<GPS_Filter, 3>::iterator it = vel_filters.begin(); it != vel_filters.end(); ++it)
+//		(*it).reset();
 
 	x.reset();
 	y.reset();
+	z.reset();
 }
 
 bool translation_outer_pid::runnable() const

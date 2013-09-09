@@ -38,6 +38,7 @@ const std::string attitude_pid::PARAM_PITCH_TRIM = "TRIM_PITCH";
 attitude_pid::attitude_pid()
 :roll(50),
  pitch(50),
+ yaw(50),
  control_effort(blas::zero_vector<double>(2)),
  roll_trim(0),
  pitch_trim(0),
@@ -105,9 +106,6 @@ void attitude_pid::operator()(const blas::vector<double>& reference,
 	blas::vector<double> euler_rate_error(euler_rate - reference_derivative);
 	// nb: yaw rate is unused - which is good since based on previous tests it was unreliable
 
-	std::vector<double> log(euler_error.begin(), euler_error.end());
-	log.insert(log.end(), euler_rate_error.begin(), euler_rate_error.end());
-	LogFile::getInstance()->logData("Attitude PID error", log);
 	blas::vector<double> control_effort(blas::zero_vector<double>(3));
 
 	std::vector<double> error_states;
@@ -131,9 +129,9 @@ void attitude_pid::operator()(const blas::vector<double>& reference,
 	control_effort[2] = reference_derivative[2] + yaw.compute_pid();
 	yaw_lock.unlock();
 
-	// saturate the controls to [-1, 1] - don't want to do this for yaw channel
-//	Control::saturate(control_effort);
-//	set_control_effort(control_effort);
+	// saturate the controls to [-1, 1]
+	Control::saturate(control_effort);
+	set_control_effort(control_effort);
 
 	LogFile::getInstance()->logData(heli::LOG_ATTITUDE_ERROR, error_states);
 	LogFile::getInstance()->logData(heli::LOG_ATTITUDE_CONTROL_EFFORT, control_effort);
@@ -333,6 +331,33 @@ rapidxml::xml_node<>* attitude_pid::get_xml_node(rapidxml::xml_document<>& doc)
 		channel_node->append_node(node);
 	}
 
+	{
+//		yaw
+		rapidxml::xml_node<> *node = NULL;
+		char *node_value = NULL;
+		rapidxml::xml_attribute<> *attr = NULL;
+
+		rapidxml::xml_node<> *channel_node = doc.allocate_node(rapidxml::node_element, "channel");
+		attr = doc.allocate_attribute("name", "yaw");
+		channel_node->append_attribute(attr);
+		pid_node->append_node(channel_node);
+
+		//yaw proportional
+		yaw_lock.lock();
+		node_value = doc.allocate_string(boost::lexical_cast<std::string>(yaw.gains().proportional()).c_str());
+		node = doc.allocate_node(rapidxml::node_element, "gain", node_value);
+		attr = doc.allocate_attribute("type", "yaw");
+		node->append_attribute(attr);
+		channel_node->append_node(node);
+
+		// yaw integral
+		node_value = doc.allocate_string(boost::lexical_cast<std::string>(yaw.gains().integral()).c_str());
+		node = doc.allocate_node(rapidxml::node_element, "gain", node_value);
+		attr = doc.allocate_attribute("type", "integral");
+		node->append_attribute(attr);
+		yaw_lock.unlock();
+		channel_node->append_node(node);
+	}
 
 
 	{
@@ -402,6 +427,15 @@ void attitude_pid::parse_pid(rapidxml::xml_node<> *pid_params)
 						set_pitch_integral(boost::lexical_cast<double>(gain_value));
 					else
 						warning() << "parse_pid(): Unknown gain on pitch channel: " << gain;
+				}
+				else if (channel_name == "YAW")
+				{
+					if (gain == "PROPORTIONAL")
+						set_yaw_proportional(boost::lexical_cast<double>(gain_value));
+					else if (gain == "INTEGRAL")
+						set_yaw_integral(boost::lexical_cast<double>(gain_value));
+					else
+						warning() << "parse_pid(): Unknown gain on yaw channel: " << gain;
 				}
 				else
 					warning() << "parse_pid(): Unknown channel: " << channel_name;
