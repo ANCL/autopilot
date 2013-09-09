@@ -49,8 +49,10 @@ attitude_pid::attitude_pid()
 	LogFile *log = LogFile::getInstance();
 	log->logHeader(heli::LOG_ATTITUDE_ERROR, "Roll_Proportional Roll_Derivative Roll_Integral Pitch_Proportional Pitch_Derivative Pitch_Integral");
 	log->logData(heli::LOG_ATTITUDE_ERROR, std::vector<double>());
-	log->logHeader(heli::LOG_ATTITUDE_REFERENCE, "Roll Pitch");
-	log->logData(heli::LOG_ATTITUDE_REFERENCE, std::vector<double>());
+	log->logHeader(heli::LOG_ATTITUDE_CONTROL_EFFORT, "Roll_Torque, Pitch_Torque, Yaw_Vel_Ref");
+	log->logData(heli::LOG_ATTITUDE_CONTROL_EFFORT, std::vector<double>());
+//	log->logHeader(heli::LOG_ATTITUDE_REFERENCE, "Roll Pitch");
+//	log->logData(heli::LOG_ATTITUDE_REFERENCE, std::vector<double>());
 }
 
 attitude_pid::attitude_pid(const attitude_pid& other)
@@ -105,8 +107,7 @@ void attitude_pid::operator()(const blas::vector<double>& reference,
 	std::vector<double> log(euler_error.begin(), euler_error.end());
 	log.insert(log.end(), euler_rate_error.begin(), euler_rate_error.end());
 	LogFile::getInstance()->logData("Attitude PID error", log);
-	blas::vector<double> control_effort(2);
-	control_effort.clear();
+	blas::vector<double> control_effort(blas::zero_vector<double>(3));
 
 	std::vector<double> error_states;
 	roll_lock.lock();
@@ -140,7 +141,6 @@ void attitude_pid::operator()(const blas::vector<double>& reference,
 
 std::vector<Parameter> attitude_pid::getParameters()
 {
-//	boost::mutex::scoped_lock lock(read_params_lock);
 	std::vector<Parameter> plist;
 
 	roll_lock.lock();
@@ -154,6 +154,11 @@ std::vector<Parameter> attitude_pid::getParameters()
 	plist.push_back(Parameter(PARAM_PITCH_KD, pitch.gains().derivative(), heli::CONTROLLER_ID));
 	plist.push_back(Parameter(PARAM_PITCH_KI, pitch.gains().integral(), heli::CONTROLLER_ID));
 	pitch_lock.unlock();
+
+	yaw_lock.lock();
+	plist.push_back(Parameter(PARAM_YAW_KP, yaw.gains().proportional(), heli::CONTROLLER_ID));
+	plist.push_back(Parameter(PARAM_YAW_KI, yaw.gains().integral(), heli::CONTROLLER_ID));
+	yaw_lock.unlock();
 
 	plist.push_back(Parameter(PARAM_ROLL_TRIM, get_roll_trim_degrees(), heli::CONTROLLER_ID));
 	plist.push_back(Parameter(PARAM_PITCH_TRIM, get_pitch_trim_degrees(), heli::CONTROLLER_ID));

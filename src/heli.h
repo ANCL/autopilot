@@ -68,7 +68,7 @@ const unsigned int adc_send_priority = 80;
 
 // controller logs
 const std::string LOG_ATTITUDE_ERROR = "Attitude PID Error States";
-const std::string LOG_ATTITUDE_REFERENCE = "Pilot Attitude Reference";
+//const std::string LOG_ATTITUDE_REFERENCE = "Pilot Attitude Reference";
 const std::string LOG_ATTITUDE_CONTROL_EFFORT = "Attitude PID Control Effort";
 const std::string LOG_POSITION_REFERENCE = "Position Reference Nav Frame";
 //const std::string LOG_POSITION_ERROR = "Position Error (Body Frame)";
