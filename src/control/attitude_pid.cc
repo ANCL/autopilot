@@ -87,23 +87,23 @@ void attitude_pid::operator()(const blas::vector<double>& reference,
 	if (!runnable())
 		throw bad_control("attempted to compute attitude_pid, but it wasn't runnable.");
 
-	if (reference.size() < 2)
-		throw bad_control("Attitude control received less than two references (roll pitch)");
+	if (reference.size() != 3)
+		throw bad_control("Attitude control received a reference which wasn't a 3-vector (roll pitch yaw)");
 
-	blas::vector<double> roll_pitch_reference(reference);
-	roll_pitch_reference.resize(2);
+//	blas::vector<double> attitude_reference(reference);
+//	roll_pitch_reference.resize(3);
 
 	IMU* imu = IMU::getInstance();
 	blas::vector<double> euler(imu->get_euler());
 	blas::vector<double> euler_rate(imu->get_euler_rate());
 	// resize to perform vector subtraction
-	euler.resize(2);
+//	euler.resize(2);
 
-
-	blas::vector<double> euler_error(euler - roll_pitch_reference);
+	blas::vector<double> euler_error(euler - reference);
+	blas::vector<double> euler_rate_error(euler_rate - reference_derivative);
 
 	std::vector<double> log(euler_error.begin(), euler_error.end());
-	log.insert(log.end(), euler_rate.begin(), euler_rate.end()-1);
+	log.insert(log.end(), euler_rate_error.begin(), euler_rate_error.end());
 	LogFile::getInstance()->logData("Attitude PID error", log);
 	blas::vector<double> control_effort(2);
 	control_effort.clear();
@@ -111,24 +111,29 @@ void attitude_pid::operator()(const blas::vector<double>& reference,
 	std::vector<double> error_states;
 	roll_lock.lock();
 	error_states.push_back(roll.error().proportional() = euler_error[0]);
-	error_states.push_back(roll.error().derivative() = euler_rate[0]);
+	error_states.push_back(roll.error().derivative() = euler_rate_error[0]);
 	error_states.push_back(++roll.error());
 	control_effort[0] = roll.compute_pid();
 	roll_lock.unlock();
 
 	pitch_lock.lock();
 	error_states.push_back(pitch.error().proportional() = euler_error[1]);
-	error_states.push_back(pitch.error().derivative() = euler_rate[1]);
+	error_states.push_back(pitch.error().derivative() = euler_rate_error[1]);
 	error_states.push_back(++pitch.error());
-
-	LogFile::getInstance()->logData(heli::LOG_ATTITUDE_ERROR, error_states);
 	control_effort[1] = pitch.compute_pid();
 	pitch_lock.unlock();
+
+	yaw_lock.lock();
+	error_states.push_back(yaw.error().proportional() = euler_error[2]);
+	error_states.push_back(++yaw.error());
+	control_effort[2] = yaw.compute_pid();
+	yaw_lock.unlock();
 
 	// saturate the controls to [-1, 1]
 	Control::saturate(control_effort);
 	set_control_effort(control_effort);
 
+	LogFile::getInstance()->logData(heli::LOG_ATTITUDE_ERROR, error_states);
 	LogFile::getInstance()->logData(heli::LOG_ATTITUDE_CONTROL_EFFORT, control_effort);
 //	debug() << "Attitude PID control effort: " << control_effort;
 }

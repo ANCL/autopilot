@@ -55,7 +55,9 @@ public:
 	 * If an error unrecoverable condition is detected during the control computation which prevents
 	 * a valid control effort from being computed a bad_control object will be thrown.
 	 */
-	virtual void operator()(const blas::vector<double>& reference) throw(bad_control) = 0;
+	virtual void operator()(const blas::vector<double>& reference,
+			const blas::vector<double>& reference_derivative,
+			const blas::vector<double>& reference_2derivative) throw(bad_control) = 0;
 	/**
 	 * Return the control effort.  This function does not actually compute the control
 	 * (i.e., integrate any states) since it may be called several times per timestep.

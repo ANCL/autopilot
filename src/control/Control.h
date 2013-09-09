@@ -92,7 +92,7 @@ public:
 	void operator()();
 
 	/// only declared to be compatible with ControllerInterface
-	void operator()(const blas::vector<double>& reference) throw(bad_control){}
+	void operator()(const blas::vector<double>&, const blas::vector<double>&, const blas::vector<double>&) throw(bad_control){}
 
 	/// string representation of roll mix parameter
 	static const std::string PARAM_MIX_ROLL;
@@ -176,7 +176,7 @@ private:
 	translation_outer_pid x_y_pid_controller;
 
 	/// PID control with tail rotor sbf compensation
-	tail_sbf x_y_sbf_controller;
+//	tail_sbf x_y_sbf_controller;
 
 	/**
 	 * Stores the weighting used to calculate the pilot mix with the controller output.

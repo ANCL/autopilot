@@ -82,10 +82,11 @@ public:
 	 */
 	void set_y_integral(double ki);
 	/**
-	 * Perform the pid control computation and return
-	 * the roll pitch reference
+	 * Perform the pid control computation
 	 */
-	void operator()(const blas::vector<double>& reference) throw(bad_control);
+	void operator()(const blas::vector<double>& reference,
+			const blas::vector<double>& reference_derivative,
+			const blas::vector<double>& reference_2derivative) throw(bad_control);
 	/// @returns the roll pitch reference in radians (threadsafe)
 	inline blas::vector<double> get_control_effort() const {boost::mutex::scoped_lock lock(control_effort_lock); return control_effort;}
 

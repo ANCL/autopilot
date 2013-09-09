@@ -76,8 +76,8 @@ std::vector<Parameter> Control::getParameters()
 	std::vector<Parameter> translation_controller_params(translation_pid_controller().getParameters());
 	plist.insert(plist.end(), translation_controller_params.begin(), translation_controller_params.end());
 
-	std::vector<Parameter> sbf_controller_params(x_y_sbf_controller.getParameters());
-	plist.insert(plist.end(), sbf_controller_params.begin(), sbf_controller_params.end());
+//	std::vector<Parameter> sbf_controller_params(x_y_sbf_controller.getParameters());
+//	plist.insert(plist.end(), sbf_controller_params.begin(), sbf_controller_params.end());
 
 	std::vector<Parameter> line_params(line_trajectory.getParameters());
 	plist.insert(plist.end(), line_params.begin(), line_params.end());
@@ -133,20 +133,20 @@ void Control::setParameter(Parameter p)
 	else if (param_id == translation_outer_pid::PARAM_TRAVEL)
 		translation_pid_controller().set_scaled_travel_degrees(p.getValue());
 
-	else if (param_id == tail_sbf::PARAM_TRAVEL)
-		x_y_sbf_controller.set_scaled_travel_degrees(p.getValue());
-	else if (param_id == tail_sbf::PARAM_X_KP)
-		x_y_sbf_controller.set_x_proportional(p.getValue());
-	else if (param_id == tail_sbf::PARAM_X_KD)
-		x_y_sbf_controller.set_x_derivative(p.getValue());
-	else if (param_id == tail_sbf::PARAM_X_KI)
-		x_y_sbf_controller.set_x_integral(p.getValue());
-	else if (param_id == tail_sbf::PARAM_Y_KP)
-		x_y_sbf_controller.set_y_proportional(p.getValue());
-	else if (param_id == tail_sbf::PARAM_Y_KD)
-		x_y_sbf_controller.set_y_derivative(p.getValue());
-	else if (param_id == tail_sbf::PARAM_Y_KI)
-		x_y_sbf_controller.set_y_integral(p.getValue());
+//	else if (param_id == tail_sbf::PARAM_TRAVEL)
+//		x_y_sbf_controller.set_scaled_travel_degrees(p.getValue());
+//	else if (param_id == tail_sbf::PARAM_X_KP)
+//		x_y_sbf_controller.set_x_proportional(p.getValue());
+//	else if (param_id == tail_sbf::PARAM_X_KD)
+//		x_y_sbf_controller.set_x_derivative(p.getValue());
+//	else if (param_id == tail_sbf::PARAM_X_KI)
+//		x_y_sbf_controller.set_x_integral(p.getValue());
+//	else if (param_id == tail_sbf::PARAM_Y_KP)
+//		x_y_sbf_controller.set_y_proportional(p.getValue());
+//	else if (param_id == tail_sbf::PARAM_Y_KD)
+//		x_y_sbf_controller.set_y_derivative(p.getValue());
+//	else if (param_id == tail_sbf::PARAM_Y_KI)
+//		x_y_sbf_controller.set_y_integral(p.getValue());
 
 	else if (param_id == circle::PARAM_HOVER_TIME)
 		circle_trajectory.set_hover_time(p.getValue());
@@ -282,8 +282,8 @@ void Control::loadFile()
 			attitude_pid_controller().parse_pid(node);
 		else if (std::string(node_name) == "translation_outer_pid")
 			translation_pid_controller().parse_xml_node(node);
-		else if (std::string(node_name) == "translation_outer_sbf")
-			x_y_sbf_controller.parse_xml_node(node);
+//		else if (std::string(node_name) == "translation_outer_sbf")
+//			x_y_sbf_controller.parse_xml_node(node);
 		else if (std::string(node_name) == "line")
 			line_trajectory.parse_xml_node(node);
 		else if (std::string(node_name) == "circle")
@@ -335,11 +335,11 @@ void Control::operator()()
 		{
 			try
 			{
-				translation_pid_controller()(reference_position);
+				translation_pid_controller()(reference_position, blas::zero_vector<double>(3), blas::zero_vector<double>(3));
 				blas::vector<double> roll_pitch_reference(translation_pid_controller().get_control_effort());
 				set_reference_attitude(roll_pitch_reference);
 				LogFile::getInstance()->logData(heli::LOG_PID_TRANS_ATTITUDE_REF, roll_pitch_reference);
-				attitude_pid_controller()(roll_pitch_reference);
+				attitude_pid_controller()(roll_pitch_reference, blas::zero_vector<double>(3), blas::zero_vector<double>(3));
 			}
 			catch (bad_control& bc)
 			{
@@ -356,7 +356,7 @@ void Control::operator()()
 		// prevents exception being thrown
 		return;
 	}
-	else if (get_controller_mode() == heli::Mode_Position_Hold_SBF)
+/*	else if (get_controller_mode() == heli::Mode_Position_Hold_SBF)
 	{
 		if (x_y_sbf_controller.runnable())
 		{
@@ -380,7 +380,7 @@ void Control::operator()()
 			set_controller_mode(heli::Mode_Attitude_Stabilization_PID);
 		}
 		return;
-	}
+	}*/
 	// not else if so that it will run if the mode was changed
 	if (get_controller_mode() == heli::Mode_Attitude_Stabilization_PID)
 	{
@@ -388,7 +388,7 @@ void Control::operator()()
 		roll_pitch_reference[ROLL] = attitude_pid_controller().get_roll_trim_radians();
 		roll_pitch_reference[PITCH] = attitude_pid_controller().get_pitch_trim_radians();
 		set_reference_attitude(roll_pitch_reference);
-		attitude_pid_controller()(roll_pitch_reference);
+		attitude_pid_controller()(roll_pitch_reference, blas::zero_vector<double>(3), blas::zero_vector<double>(3));
 
 		// prevents exception being thrown
 		return;
@@ -411,8 +411,8 @@ void Control::saveFile()
 	root_node->append_node(trans_pid_node);
 
 	/* get sbf params */
-	rapidxml::xml_node<> *sbf_pid_node = x_y_sbf_controller.get_xml_node(config_file_xml);
-	root_node->append_node(sbf_pid_node);
+//	rapidxml::xml_node<> *sbf_pid_node = x_y_sbf_controller.get_xml_node(config_file_xml);
+//	root_node->append_node(sbf_pid_node);
 
 	/* get circle params */
 	rapidxml::xml_node<> *circle_node = circle_trajectory.get_xml_node(config_file_xml);
@@ -516,7 +516,7 @@ void Control::reset()
 {
 	x_y_pid_controller.reset();
 	roll_pitch_pid_controller.reset();
-	x_y_sbf_controller.reset();
+//	x_y_sbf_controller.reset();
 	line_trajectory.reset();
 	circle_trajectory.reset();
 }

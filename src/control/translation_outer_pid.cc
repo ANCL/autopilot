@@ -50,7 +50,9 @@ translation_outer_pid::translation_outer_pid(const translation_outer_pid& other)
 
 
 
-void translation_outer_pid::operator()(const blas::vector<double>& reference) throw(bad_control)
+void translation_outer_pid::operator()(const blas::vector<double>& reference,
+		const blas::vector<double>& reference_derivative,
+		const blas::vector<double>& reference_2derivative) throw(bad_control)
 {
 	// get attitude measurement
 	IMU* imu = IMU::getInstance();
