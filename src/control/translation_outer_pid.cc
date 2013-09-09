@@ -24,8 +24,8 @@
 #include "Control.h"
 
 translation_outer_pid::translation_outer_pid()
-: x(10),
-  y(10),
+: x(100),
+  y(100),
   scaled_travel(15)
 {
 	x.name() = "X";
@@ -198,7 +198,7 @@ void translation_outer_pid::set_scaled_travel(double travel)
 		boost::mutex::scoped_lock lock(scaled_travel_lock);
 		scaled_travel = travel;
 	}
-	message() << "Set travel to: " << travel;
+	message() << "Set attitude reference limit to: " << travel;
 }
 
 rapidxml::xml_node<>* translation_outer_pid::get_xml_node(rapidxml::xml_document<>& doc)

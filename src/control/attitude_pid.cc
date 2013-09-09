@@ -30,12 +30,14 @@ const std::string attitude_pid::PARAM_ROLL_KI = "PID_ROLL_KI";
 const std::string attitude_pid::PARAM_PITCH_KP = "PID_PITCH_KP";
 const std::string attitude_pid::PARAM_PITCH_KD = "PID_PITCH_KD";
 const std::string attitude_pid::PARAM_PITCH_KI = "PID_PITCH_KI";
+const std::string attitude_pid::PARAM_YAW_KP = "PID_YAW_KP";
+const std::string attitude_pid::PARAM_YAW_KI = "PID_YAW_KI";
 const std::string attitude_pid::PARAM_ROLL_TRIM = "TRIM_ROLL";
 const std::string attitude_pid::PARAM_PITCH_TRIM = "TRIM_PITCH";
 
 attitude_pid::attitude_pid()
-:roll(5),
- pitch(5),
+:roll(50),
+ pitch(50),
  control_effort(blas::zero_vector<double>(2)),
  roll_trim(0),
  pitch_trim(0),
@@ -49,7 +51,6 @@ attitude_pid::attitude_pid()
 	log->logData(heli::LOG_ATTITUDE_ERROR, std::vector<double>());
 	log->logHeader(heli::LOG_ATTITUDE_REFERENCE, "Roll Pitch");
 	log->logData(heli::LOG_ATTITUDE_REFERENCE, std::vector<double>());
-
 }
 
 attitude_pid::attitude_pid(const attitude_pid& other)
@@ -79,7 +80,9 @@ void attitude_pid::reset()
 	pitch.reset();
 }
 
-void attitude_pid::operator()(const blas::vector<double>& reference) throw(bad_control)
+void attitude_pid::operator()(const blas::vector<double>& reference,
+		const blas::vector<double>& reference_derivative,
+		const blas::vector<double>& reference_2derivative) throw(bad_control)
 {
 	if (!runnable())
 		throw bad_control("attempted to compute attitude_pid, but it wasn't runnable.");
@@ -206,6 +209,26 @@ void attitude_pid::set_pitch_integral(double ki)
 	}
 	message() << "Set pitch integral gain to: " << ki;
 }
+
+void attitude_pid::set_yaw_integral(double ki)
+{
+	{
+		boost::mutex::scoped_lock lock(yaw_lock);
+		yaw.gains().integral() = ki;
+	}
+	message() << "Set yaw integral gain to: " << ki;
+}
+
+void attitude_pid::set_yaw_proportional(double kp)
+{
+	{
+		boost::mutex::scoped_lock lock(yaw_lock);
+		yaw.gains().proportional() = kp;
+	}
+	message() << "Set yaw proportional gain to: " << kp;
+}
+
+
 void attitude_pid::set_roll_trim_degrees(double trim_degrees)
 {
 	{

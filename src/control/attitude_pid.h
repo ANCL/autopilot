@@ -41,6 +41,7 @@ namespace blas = boost::numeric::ublas;
  * @author Bryan Godbolt <godbolt@ece.ualberta.ca>
  * @date October 26, 2011
  * @date February 10, 2012: Refactored into separate file and cleaned up
+ * @date September 6, 2013: Added yaw control PI control
  */
 class attitude_pid : public ControllerInterface
 {
@@ -48,13 +49,16 @@ public:
 	attitude_pid();
 	attitude_pid(const attitude_pid& other);
 	/**
-	 * @brief Performs the control computation.  The control attempts to
-	 * regulate the reference orientation with zero angular velocity.
-	 * @param reference roll pitch reference values in radians.
+	 * @brief Performs the control computation.
+	 * @param reference roll pitch yaw reference values in radians.
+	 * @param reference_derivative rpy reference derivative
+	 * @param reference_2derivative second rpy reference derivative
 	 */
-	void operator()(const blas::vector<double>& reference) throw(bad_control);
+	void operator()(const blas::vector<double>& reference,
+			const blas::vector<double>& reference_derivative,
+			const blas::vector<double>& reference_2derivative) throw(bad_control);
 
-	/// threadsafe get control_effort
+	/// threadsafe get control_effort - this is a 3-vector of (normlaized) torques in roll pitch yaw directions
 	inline blas::vector<double> get_control_effort() const {boost::mutex::scoped_lock lock(control_effort_lock); return control_effort;}
 
 	/// reset the integrator error states
@@ -72,6 +76,8 @@ public:
 	static const std::string PARAM_PITCH_KP;
 	static const std::string PARAM_PITCH_KD;
 	static const std::string PARAM_PITCH_KI;
+	static const std::string PARAM_YAW_KP;
+	static const std::string PARAM_YAW_KI;
 
 	static const std::string PARAM_ROLL_TRIM;
 	static const std::string PARAM_PITCH_TRIM;
@@ -107,6 +113,10 @@ public:
 	 * This function is threadsafe.
 	 */
 	void set_pitch_integral(double ki);
+
+	void set_yaw_proportional(double kp);
+
+	void set_yaw_integral(double ki);
 
 	/**
 	 * Outputs the controller parameters as an xml tree
@@ -152,19 +162,21 @@ public:
 	 */
 	inline double get_pitch_trim_degrees() {boost::mutex::scoped_lock lock(pitch_trim_lock); return pitch_trim * 180 / boost::math::constants::pi<double>();}
 	/// threadsafe get runnable
-	inline bool runnable() const {return _runnable;}
+	inline bool runnable() const {boost::mutex::scoped_lock(runnable_lock); return _runnable;}
 
 private:
 	pid_channel roll;
 	mutable boost::mutex roll_lock;
 	pid_channel pitch;
 	mutable boost::mutex pitch_lock;
+	pid_channel yaw;
+	mutable boost::mutex yaw_lock;
 
 	/// store the current normalized servo commands
 	blas::vector<double> control_effort;
 	/// serialize access to control_effort
 	mutable boost::mutex control_effort_lock;
-	/// threadsafe set control_effort
+	/// threadsafe set control_effort - must be 3-vector of (normalized) torques in roll pitch yaw directions
 	inline void set_control_effort(const blas::vector<double>& control_effort) {boost::mutex::scoped_lock lock(control_effort_lock); this->control_effort = control_effort;}
 
 	/// trim point regulated by the controller.  it is stored in radians
